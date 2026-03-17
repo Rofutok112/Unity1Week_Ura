@@ -12,6 +12,7 @@ namespace Projects.Scripts.Characters
             bool sprintHeld,
             bool crouchHeld,
             bool attackPressed,
+            bool attackHeld,
             bool interactPressed,
             bool togglePolarityPressed)
         {
@@ -22,6 +23,7 @@ namespace Projects.Scripts.Characters
             SprintHeld = sprintHeld;
             CrouchHeld = crouchHeld;
             AttackPressed = attackPressed;
+            AttackHeld = attackHeld;
             InteractPressed = interactPressed;
             TogglePolarityPressed = togglePolarityPressed;
         }
@@ -33,6 +35,7 @@ namespace Projects.Scripts.Characters
         public bool SprintHeld { get; }
         public bool CrouchHeld { get; }
         public bool AttackPressed { get; }
+        public bool AttackHeld { get; }
         public bool InteractPressed { get; }
         public bool TogglePolarityPressed { get; }
     }

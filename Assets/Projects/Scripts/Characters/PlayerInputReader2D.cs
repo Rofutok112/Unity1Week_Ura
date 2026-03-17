@@ -60,6 +60,7 @@ namespace Projects.Scripts.Characters
             }
 
             bool attackTriggered = attackAction != null && attackAction.WasPressedThisFrame();
+            bool attackHeld = attackAction != null && attackAction.IsPressed();
             bool interactTriggered = interactAction != null && interactAction.WasPressedThisFrame();
             bool togglePolarityTriggered = IsTogglePolarityPressedThisFrame();
 
@@ -71,6 +72,7 @@ namespace Projects.Scripts.Characters
                 sprintAction != null && sprintAction.IsPressed(),
                 crouchAction != null && crouchAction.IsPressed(),
                 attackTriggered,
+                attackHeld,
                 interactTriggered,
                 togglePolarityTriggered);
 

@@ -64,6 +64,18 @@ namespace Projects.Scripts.Characters
         public float FacingDirection => facingDirection;
         public bool IsGrounded => isGrounded;
 
+        public void SetFacingDirection(float direction)
+        {
+            if (direction > 0.01f)
+            {
+                facingDirection = 1f;
+            }
+            else if (direction < -0.01f)
+            {
+                facingDirection = -1f;
+            }
+        }
+
         private void Awake()
         {
             rb = GetComponent<Rigidbody2D>();
@@ -82,11 +94,11 @@ namespace Projects.Scripts.Characters
 
             if (currentInput.Move.x > 0.01f)
             {
-                facingDirection = 1f;
+                SetFacingDirection(1f);
             }
             else if (currentInput.Move.x < -0.01f)
             {
-                facingDirection = -1f;
+                SetFacingDirection(-1f);
             }
 
             if (currentInput.JumpPressed)
