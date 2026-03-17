@@ -12,7 +12,8 @@ namespace Projects.Scripts.Characters
             bool sprintHeld,
             bool crouchHeld,
             bool attackPressed,
-            bool interactPressed)
+            bool interactPressed,
+            bool togglePolarityPressed)
         {
             Move = move;
             Look = look;
@@ -22,6 +23,7 @@ namespace Projects.Scripts.Characters
             CrouchHeld = crouchHeld;
             AttackPressed = attackPressed;
             InteractPressed = interactPressed;
+            TogglePolarityPressed = togglePolarityPressed;
         }
 
         public Vector2 Move { get; }
@@ -32,5 +34,6 @@ namespace Projects.Scripts.Characters
         public bool CrouchHeld { get; }
         public bool AttackPressed { get; }
         public bool InteractPressed { get; }
+        public bool TogglePolarityPressed { get; }
     }
 }

@@ -16,6 +16,7 @@ namespace Projects.Scripts.Characters
         [SerializeField] private string crouchActionName = "Crouch";
         [SerializeField] private string attackActionName = "Attack";
         [SerializeField] private string interactActionName = "Interact";
+        [SerializeField] private string togglePolarityActionName = "TogglePolarity";
 
         private InputActionMap playerActionMap;
         private InputAction moveAction;
@@ -25,11 +26,13 @@ namespace Projects.Scripts.Characters
         private InputAction crouchAction;
         private InputAction attackAction;
         private InputAction interactAction;
+        private InputAction togglePolarityAction;
 
         public CharacterInputFrame CurrentFrame { get; private set; }
 
         public event Action AttackPressed;
         public event Action InteractPressed;
+        public event Action TogglePolarityPressed;
 
         private void Awake()
         {
@@ -58,6 +61,7 @@ namespace Projects.Scripts.Characters
 
             bool attackTriggered = attackAction != null && attackAction.WasPressedThisFrame();
             bool interactTriggered = interactAction != null && interactAction.WasPressedThisFrame();
+            bool togglePolarityTriggered = IsTogglePolarityPressedThisFrame();
 
             CurrentFrame = new CharacterInputFrame(
                 moveAction != null ? moveAction.ReadValue<Vector2>() : Vector2.zero,
@@ -67,7 +71,8 @@ namespace Projects.Scripts.Characters
                 sprintAction != null && sprintAction.IsPressed(),
                 crouchAction != null && crouchAction.IsPressed(),
                 attackTriggered,
-                interactTriggered);
+                interactTriggered,
+                togglePolarityTriggered);
 
             if (attackTriggered)
             {
@@ -77,6 +82,11 @@ namespace Projects.Scripts.Characters
             if (interactTriggered)
             {
                 InteractPressed?.Invoke();
+            }
+
+            if (togglePolarityTriggered)
+            {
+                TogglePolarityPressed?.Invoke();
             }
         }
 
@@ -89,6 +99,7 @@ namespace Projects.Scripts.Characters
             crouchAction = null;
             attackAction = null;
             interactAction = null;
+            togglePolarityAction = null;
 
             if (actionsAsset == null)
             {
@@ -111,6 +122,17 @@ namespace Projects.Scripts.Characters
             crouchAction = playerActionMap.FindAction(crouchActionName, false);
             attackAction = playerActionMap.FindAction(attackActionName, false);
             interactAction = playerActionMap.FindAction(interactActionName, false);
+            togglePolarityAction = playerActionMap.FindAction(togglePolarityActionName, false);
+        }
+
+        private bool IsTogglePolarityPressedThisFrame()
+        {
+            if (togglePolarityAction != null)
+            {
+                return togglePolarityAction.WasPressedThisFrame();
+            }
+
+            return Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame;
         }
     }
 }
