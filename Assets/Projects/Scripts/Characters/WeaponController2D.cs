@@ -92,14 +92,16 @@ namespace Projects.Scripts.Characters
         {
             Vector2 normalizedAim = aimDirection.sqrMagnitude > 0.0001f ? aimDirection.normalized : Vector2.right;
             int pelletCount = Mathf.Max(1, currentWeapon.PelletsPerShot);
+            float spread = currentWeapon.SpreadAngle;
+            float inaccuracyAngle = spread * (1f - currentWeapon.Accuracy);
 
             if (pelletCount == 1)
             {
-                projectileSpawner.Spawn(owner, ignoredCollider, origin, normalizedAim, currentWeapon.ProjectileDefinition);
+                Vector2 randomizedDirection = ApplyRandomSpread(normalizedAim, inaccuracyAngle);
+                projectileSpawner.Spawn(owner, ignoredCollider, origin, randomizedDirection, currentWeapon.ProjectileDefinition);
                 return;
             }
 
-            float spread = currentWeapon.SpreadAngle;
             float step = pelletCount > 1 ? spread / (pelletCount - 1) : 0f;
             float startAngle = -spread * 0.5f;
 
@@ -107,8 +109,20 @@ namespace Projects.Scripts.Characters
             {
                 float angle = startAngle + step * i;
                 Vector2 pelletDirection = Rotate(normalizedAim, angle);
+                pelletDirection = ApplyRandomSpread(pelletDirection, inaccuracyAngle);
                 projectileSpawner.Spawn(owner, ignoredCollider, origin, pelletDirection, currentWeapon.ProjectileDefinition);
             }
+        }
+
+        private static Vector2 ApplyRandomSpread(Vector2 direction, float randomAngleRange)
+        {
+            if (randomAngleRange <= 0f)
+            {
+                return direction.normalized;
+            }
+
+            float randomAngle = Random.Range(-randomAngleRange * 0.5f, randomAngleRange * 0.5f);
+            return Rotate(direction, randomAngle);
         }
 
         private static Vector2 Rotate(Vector2 vector, float degrees)

@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd9e46c257197a84081a4382975fa958, type: 3}
   m_Name: WeaponDefinition2D
   m_EditorClassIdentifier: Assembly-CSharp::Projects.Scripts.Characters.WeaponDefinition2D
-  projectileDefinition: {fileID: 0}
-  fireMode: 1
+  projectileDefinition: {fileID: 11400000, guid: 076002ed4bacf114083c29d0dc6187a4, type: 2}
+  fireMode: 0
   fireInterval: 0.12
-  pelletsPerShot: 1
-  spreadAngle: 2
+  pelletsPerShot: 5
+  spreadAngle: 45
+  accuracy: 0.308
   burstCount: 3
   burstInterval: 0.06

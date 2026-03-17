@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e61c44a03b0f0e2428855aa12095f2f7, type: 3}
   m_Name: ProjectileDefinition2D
   m_EditorClassIdentifier: Assembly-CSharp::Projects.Scripts.Characters.ProjectileDefinition2D
-  speed: 18
+  speed: 40
   lifetime: 1.5
   maxDistance: 30
   damage: 1
