@@ -11,6 +11,7 @@ namespace Projects.Scripts.Editor
             serializedObject.Update();
 
             DrawProperty("movementType");
+            DrawProperty("impactEffectPrefab");
             DrawProperty("speed");
             DrawProperty("lifetime");
             DrawProperty("maxDistance");

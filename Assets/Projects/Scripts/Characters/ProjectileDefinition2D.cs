@@ -6,6 +6,7 @@ namespace Projects.Scripts.Characters
     public sealed class ProjectileDefinition2D : ScriptableObject
     {
         [SerializeField] private ProjectileMovementType movementType;
+        [SerializeField] private GameObject impactEffectPrefab;
         [SerializeField, Min(0.01f)] private float speed = 18f;
         [SerializeField, Min(0.01f)] private float lifetime = 1.5f;
         [SerializeField, Min(0.01f)] private float maxDistance = 30f;
@@ -14,6 +15,7 @@ namespace Projects.Scripts.Characters
         [SerializeField] private DelayedHomingSettings delayedHoming = new DelayedHomingSettings();
 
         public ProjectileMovementType MovementType => movementType;
+        public GameObject ImpactEffectPrefab => impactEffectPrefab;
         public float Speed => speed;
         public float Lifetime => lifetime;
         public float MaxDistance => maxDistance;

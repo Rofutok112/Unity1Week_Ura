@@ -22,8 +22,8 @@ MonoBehaviour:
   launchDirectionLocal: {x: 0, y: 1}
   fireMode: 2
   fireInterval: 1
-  pelletsPerShot: 1
+  pelletsPerShot: 3
   spreadAngle: 30
-  accuracy: 0.192
+  accuracy: 0
   burstCount: 3
   burstInterval: 0.15

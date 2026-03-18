@@ -553,7 +553,6 @@ GameObject:
   - component: {fileID: 666759859}
   - component: {fileID: 666759851}
   - component: {fileID: 666759856}
-  - component: {fileID: 666759858}
   - component: {fileID: 666759857}
   - component: {fileID: 666759861}
   - component: {fileID: 666759860}
@@ -797,8 +796,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Projects.Scripts.Characters.Shooter2D
   inputReader: {fileID: 666759852}
   motor: {fileID: 666759851}
-  primaryWeaponController: {fileID: 666759858}
-  secondaryWeaponController: {fileID: 666759858}
+  primaryWeaponController: {fileID: 666759861}
+  secondaryWeaponController: {fileID: 666759860}
   muzzleRoot: {fileID: 1300175658}
   ignoredCollider: {fileID: 666759855}
   worldCamera: {fileID: 1555914423}
@@ -806,20 +805,6 @@ MonoBehaviour:
   targetRawImage: {fileID: 265139992}
   mirrorMuzzleWithFacing: 1
   lookInputThreshold: 0.25
---- !u!114 &666759858
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 666759849}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad2156adf0189da499b7ddf2dc6e7d46, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Projects.Scripts.Characters.WeaponController2D
-  currentWeapon: {fileID: 11400000, guid: 139701baca64c524abbc4042a9018d4c, type: 2}
-  projectileSpawner: {fileID: 218643747}
 --- !u!114 &666759859
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1327,7 +1312,7 @@ GameObject:
   - component: {fileID: 1713370573}
   - component: {fileID: 1713370576}
   m_Layer: 0
-  m_Name: Square
+  m_Name: Target
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

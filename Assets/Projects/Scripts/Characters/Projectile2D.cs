@@ -17,6 +17,7 @@ namespace Projects.Scripts.Characters
         private float distanceRemaining;
         private float homingDelayRemaining;
         private LayerMask hitMask;
+        private GameObject impactEffectPrefab;
         private ProjectileMovementType movementType;
         private DelayedHomingSettings delayedHoming;
         private ProjectileSpawner2D despawnTarget;
@@ -46,6 +47,7 @@ namespace Projects.Scripts.Characters
             lifetimeRemaining = definition.Lifetime;
             distanceRemaining = definition.MaxDistance;
             hitMask = definition.HitMask;
+            impactEffectPrefab = definition.ImpactEffectPrefab;
             movementType = definition.MovementType;
             delayedHoming = definition.DelayedHoming;
             homingDelayRemaining = delayedHoming != null ? delayedHoming.HomingDelay : 0f;
@@ -92,6 +94,7 @@ namespace Projects.Scripts.Characters
                 if (hit.collider != null && hit.collider != ignoredCollider)
                 {
                     transform.position = hit.point;
+                    SpawnImpactEffect(hit.point, hit.normal);
                     ApplyDamage(hit);
                     Despawn();
                     return;
@@ -126,6 +129,24 @@ namespace Projects.Scripts.Characters
             }
 
             gameObject.SetActive(false);
+        }
+
+        private void SpawnImpactEffect(Vector2 point, Vector2 normal)
+        {
+            if (impactEffectPrefab == null)
+            {
+                return;
+            }
+
+            if (despawnTarget != null)
+            {
+                despawnTarget.SpawnImpactEffect(impactEffectPrefab, point, normal, direction);
+                return;
+            }
+
+            Vector2 facing = normal.sqrMagnitude > 0.0001f ? normal.normalized : direction;
+            float angle = Mathf.Atan2(facing.y, facing.x) * Mathf.Rad2Deg;
+            Instantiate(impactEffectPrefab, point, Quaternion.Euler(0f, 0f, angle));
         }
 
         private void UpdateDirection(float deltaTime)
