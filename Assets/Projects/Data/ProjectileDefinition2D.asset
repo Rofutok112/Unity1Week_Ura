@@ -12,10 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e61c44a03b0f0e2428855aa12095f2f7, type: 3}
   m_Name: ProjectileDefinition2D
   m_EditorClassIdentifier: Assembly-CSharp::Projects.Scripts.Characters.ProjectileDefinition2D
-  speed: 40
-  lifetime: 1.5
-  maxDistance: 30
+  movementType: 1
+  speed: 20
+  lifetime: 5
+  maxDistance: 100
   damage: 1
   hitMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  delayedHoming:
+    homingDelay: 1
+    lockOnRadius: 100
+    maxLockAngle: 180
+    turnRate: 720
+    targetMask:
+      serializedVersion: 2
+      m_Bits: 4294967295

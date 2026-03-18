@@ -23,7 +23,7 @@ namespace Projects.Scripts.Characters
 
         public void TickFire(Transform owner, Collider2D ignoredCollider, Vector2 origin, Vector2 aimDirection, bool firePressed, bool fireHeld)
         {
-            if (currentWeapon == null || currentWeapon.ProjectileDefinition == null || projectileSpawner == null)
+            if (currentWeapon == null || currentWeapon.ProjectileDefinition == null || currentWeapon.ProjectilePrefab == null || projectileSpawner == null)
             {
                 return;
             }
@@ -98,7 +98,7 @@ namespace Projects.Scripts.Characters
             if (pelletCount == 1)
             {
                 Vector2 randomizedDirection = ApplyRandomSpread(normalizedAim, inaccuracyAngle);
-                projectileSpawner.Spawn(owner, ignoredCollider, origin, randomizedDirection, currentWeapon.ProjectileDefinition);
+                projectileSpawner.Spawn(currentWeapon.ProjectilePrefab, owner, ignoredCollider, origin, randomizedDirection, currentWeapon.ProjectileDefinition);
                 return;
             }
 
@@ -110,7 +110,7 @@ namespace Projects.Scripts.Characters
                 float angle = startAngle + step * i;
                 Vector2 pelletDirection = Rotate(normalizedAim, angle);
                 pelletDirection = ApplyRandomSpread(pelletDirection, inaccuracyAngle);
-                projectileSpawner.Spawn(owner, ignoredCollider, origin, pelletDirection, currentWeapon.ProjectileDefinition);
+                projectileSpawner.Spawn(currentWeapon.ProjectilePrefab, owner, ignoredCollider, origin, pelletDirection, currentWeapon.ProjectileDefinition);
             }
         }
 

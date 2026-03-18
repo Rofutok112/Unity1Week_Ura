@@ -5,17 +5,16 @@ namespace Projects.Scripts.Characters
 {
     public sealed class ProjectileSpawner2D : MonoBehaviour
     {
-        [SerializeField] private Projectile2D projectilePrefab;
         [SerializeField, Min(1)] private int prewarmCount = 8;
 
-        private readonly Queue<Projectile2D> pool = new Queue<Projectile2D>();
+        private readonly Dictionary<Projectile2D, Queue<Projectile2D>> pools = new Dictionary<Projectile2D, Queue<Projectile2D>>();
 
         private void Awake()
         {
-            Prewarm();
         }
 
         public void Spawn(
+            Projectile2D projectilePrefab,
             Transform owner,
             Collider2D ignoredCollider,
             Vector2 origin,
@@ -28,7 +27,8 @@ namespace Projects.Scripts.Characters
                 return;
             }
 
-            Projectile2D projectile = pool.Count > 0 ? pool.Dequeue() : CreateInstance();
+            Queue<Projectile2D> pool = GetPool(projectilePrefab);
+            Projectile2D projectile = pool.Count > 0 ? pool.Dequeue() : CreateInstance(projectilePrefab);
             projectile.Initialize(this, owner, ignoredCollider, origin, direction, definition);
         }
 
@@ -41,22 +41,38 @@ namespace Projects.Scripts.Characters
 
             projectile.gameObject.SetActive(false);
             projectile.transform.SetParent(transform);
-            pool.Enqueue(projectile);
+            if (projectile.PrefabSource == null)
+            {
+                return;
+            }
+
+            GetPool(projectile.PrefabSource).Enqueue(projectile);
         }
 
-        private void Prewarm()
+        private Queue<Projectile2D> GetPool(Projectile2D projectilePrefab)
         {
+            if (pools.TryGetValue(projectilePrefab, out Queue<Projectile2D> pool))
+            {
+                return pool;
+            }
+
+            pool = new Queue<Projectile2D>();
+            pools.Add(projectilePrefab, pool);
+
             for (int i = 0; i < prewarmCount; i++)
             {
-                Projectile2D projectile = CreateInstance();
+                Projectile2D projectile = CreateInstance(projectilePrefab);
                 projectile.gameObject.SetActive(false);
                 pool.Enqueue(projectile);
             }
+
+            return pool;
         }
 
-        private Projectile2D CreateInstance()
+        private Projectile2D CreateInstance(Projectile2D projectilePrefab)
         {
             Projectile2D projectile = Instantiate(projectilePrefab, transform);
+            projectile.SetPrefabSource(projectilePrefab);
             projectile.gameObject.SetActive(false);
             return projectile;
         }

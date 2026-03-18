@@ -11,10 +11,10 @@
 9. シーンのどこかに `WorldPolarityService` を追加し、`PlayerInputReader2D` を割り当てます。
 10. シーンオブジェクトに `PolarityBackground2D` を追加し、背景が白/黒に反転する場合はメインカメラを指します。
 11. ワールドと一緒に反転すべきスプライトに `PolarityObject2D` を追加します。
-12. シーンに `ProjectileSpawner2D` を追加し、`Projectile2D` プリファブを割り当てます。
-13. プレイヤーに `WeaponController2D` と `Shooter2D` を追加します。
-14. `WeaponDefinition2D` と `ProjectileDefinition2D` アセットを作成し、`WeaponController2D` に割り当てます。
-15. `Shooter2D` に子トランスフォームを `Muzzle` として設定します。
+12. シーンに `ProjectileSpawner2D` を追加します。
+13. プレイヤーに `Shooter2D` を追加し、必要に応じて `WeaponController2D` を 2 つ用意します。
+14. `WeaponDefinition2D` と `ProjectileDefinition2D` アセットを作成し、各 `WeaponController2D` に割り当てます。
+15. `Shooter2D` に子トランスフォームを `Muzzle Root` として設定します。
 
 推奨される Animator パラメータ：
 
@@ -33,5 +33,8 @@
 シューティングセットアップ：
 
 - `WeaponDefinition2D` は発射モード、ペレット数、拡散、発射レートを制御します。
-- `ProjectileDefinition2D` は速度、ライフタイム、距離、ダメージ、ヒットマスクを制御します。
+- `WeaponDefinition2D` は弾プレハブと武器ごとの発射位置オフセットも持てます。
+- `WeaponDefinition2D` は武器ごとの照準制限と発射方向も持てます。
+- `ProjectileDefinition2D` は移動タイプ、速度、ライフタイム、距離、ダメージ、ヒットマスクを制御します。
 - `Projectile2D` はヒット検出にフレーム間レイキャストを使用するため、高速弾が簡単にトンネリングしません。
+- `DelayedHoming` は発射時に目標を一度だけ固定し、`Homing Delay` 経過後にその目標へ旋回します。

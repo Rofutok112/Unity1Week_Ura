@@ -92,15 +92,6 @@ namespace Projects.Scripts.Characters
             currentInput = inputReader != null ? inputReader.CurrentFrame : default;
             UpdateDashSprintState();
 
-            if (currentInput.Move.x > 0.01f)
-            {
-                SetFacingDirection(1f);
-            }
-            else if (currentInput.Move.x < -0.01f)
-            {
-                SetFacingDirection(-1f);
-            }
-
             if (currentInput.JumpPressed)
             {
                 jumpBufferCounter = jumpBufferTime;

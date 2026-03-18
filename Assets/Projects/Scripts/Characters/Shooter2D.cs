@@ -8,25 +8,21 @@ namespace Projects.Scripts.Characters
     {
         [SerializeField] private PlayerInputReader2D inputReader;
         [SerializeField] private PlayerMotor2D motor;
-        [SerializeField] private WeaponController2D weaponController;
-        [SerializeField] private Transform muzzle;
+        [SerializeField] private WeaponController2D primaryWeaponController;
+        [SerializeField] private WeaponController2D secondaryWeaponController;
+        [SerializeField] private Transform muzzleRoot;
         [SerializeField] private Collider2D ignoredCollider;
         [SerializeField] private Camera worldCamera;
         [SerializeField] private Camera screenCamera;
         [SerializeField] private RawImage targetRawImage;
-
-        [Header("Aim Constraint")]
-        [SerializeField] private AimConstraintMode aimConstraintMode;
-        [SerializeField, Range(0f, 180f)] private float maxAimAngle = 45f;
-        [SerializeField, Range(1f, 180f)] private float snapStepAngle = 45f;
 
         [Header("Facing Visuals")]
         [SerializeField] private bool mirrorMuzzleWithFacing = true;
 
         [SerializeField, Min(0.01f)] private float lookInputThreshold = 0.25f;
 
-        private Vector3 initialMuzzleLocalPosition;
-        private Vector3 initialMuzzleLocalScale;
+        private Vector3 initialMuzzleRootLocalPosition;
+        private Vector3 initialMuzzleRootLocalScale;
 
         private void Awake()
         {
@@ -40,9 +36,9 @@ namespace Projects.Scripts.Characters
                 motor = GetComponent<PlayerMotor2D>();
             }
 
-            if (weaponController == null)
+            if (primaryWeaponController == null)
             {
-                weaponController = GetComponent<WeaponController2D>();
+                primaryWeaponController = GetComponent<WeaponController2D>();
             }
 
             if (ignoredCollider == null)
@@ -60,57 +56,51 @@ namespace Projects.Scripts.Characters
                 screenCamera = Camera.main;
             }
 
-            if (muzzle != null)
+            if (muzzleRoot != null)
             {
-                initialMuzzleLocalPosition = muzzle.localPosition;
-                initialMuzzleLocalScale = muzzle.localScale;
+                initialMuzzleRootLocalPosition = muzzleRoot.localPosition;
+                initialMuzzleRootLocalScale = muzzleRoot.localScale;
             }
         }
 
         private void Update()
         {
-            if (inputReader == null || weaponController == null)
+            if (inputReader == null)
             {
                 return;
             }
 
             CharacterInputFrame input = inputReader.CurrentFrame;
-            Vector2 aimDirection = ResolveAimDirection(input);
+            Vector2 rawAimDirection = ResolveRawAimDirection(input);
             UpdateFacingVisuals();
-            Vector2 origin = muzzle != null ? muzzle.position : transform.position;
 
-            weaponController.TickFire(
-                transform,
-                ignoredCollider,
-                origin,
-                aimDirection,
-                input.AttackPressed,
-                input.AttackHeld);
+            FireWeapon(primaryWeaponController, rawAimDirection, input.AttackPressed, input.AttackHeld);
+            FireWeapon(secondaryWeaponController, rawAimDirection, input.InteractPressed, input.InteractPressed);
         }
 
         private void UpdateFacingVisuals()
         {
-            if (!mirrorMuzzleWithFacing || muzzle == null || motor == null)
+            if (!mirrorMuzzleWithFacing || muzzleRoot == null || motor == null)
             {
                 return;
             }
 
             float facingSign = motor.FacingDirection >= 0f ? 1f : -1f;
 
-            muzzle.localPosition = new Vector3(
-                Mathf.Abs(initialMuzzleLocalPosition.x) * facingSign,
-                initialMuzzleLocalPosition.y,
-                initialMuzzleLocalPosition.z);
+            muzzleRoot.localPosition = new Vector3(
+                Mathf.Abs(initialMuzzleRootLocalPosition.x) * facingSign,
+                initialMuzzleRootLocalPosition.y,
+                initialMuzzleRootLocalPosition.z);
 
-            muzzle.localScale = new Vector3(
-                Mathf.Abs(initialMuzzleLocalScale.x) * facingSign,
-                initialMuzzleLocalScale.y,
-                initialMuzzleLocalScale.z);
+            muzzleRoot.localScale = new Vector3(
+                Mathf.Abs(initialMuzzleRootLocalScale.x) * facingSign,
+                initialMuzzleRootLocalScale.y,
+                initialMuzzleRootLocalScale.z);
         }
 
-        private Vector2 ResolveAimDirection(CharacterInputFrame input)
+        private Vector2 ResolveRawAimDirection(CharacterInputFrame input)
         {
-            Vector2 origin = muzzle != null ? muzzle.position : (Vector2)transform.position;
+            Vector2 origin = muzzleRoot != null ? muzzleRoot.position : (Vector2)transform.position;
             Vector2 resolvedDirection;
 
             if (TryGetMouseAimDirection(origin, out Vector2 mouseAimDirection))
@@ -121,9 +111,9 @@ namespace Projects.Scripts.Characters
             {
                 resolvedDirection = input.Look.normalized;
             }
-            else if (muzzle != null)
+            else if (muzzleRoot != null)
             {
-                resolvedDirection = muzzle.right;
+                resolvedDirection = muzzleRoot.right;
             }
             else if (motor != null)
             {
@@ -135,7 +125,7 @@ namespace Projects.Scripts.Characters
             }
 
             UpdateFacingFromAimDirection(resolvedDirection);
-            return ApplyAimConstraint(resolvedDirection);
+            return resolvedDirection.normalized;
         }
 
         private bool TryGetMouseAimDirection(Vector2 origin, out Vector2 aimDirection)
@@ -149,8 +139,7 @@ namespace Projects.Scripts.Characters
 
             Vector2 mouseScreenPosition = Mouse.current.position.ReadValue();
             Vector3 viewportPoint;
-            
-            // RawImageが指定されている場合は、その上でマウス位置をビューポート座標に変換する
+
             if (targetRawImage != null)
             {
                 if (!TryGetViewportPointFromRawImage(mouseScreenPosition, out Vector2 rawImageViewport))
@@ -221,7 +210,7 @@ namespace Projects.Scripts.Characters
             return true;
         }
 
-        private Vector2 ApplyAimConstraint(Vector2 aimDirection)
+        private Vector2 ApplyAimConstraint(WeaponDefinition2D weaponDefinition, Vector2 aimDirection)
         {
             if (aimDirection.sqrMagnitude <= 0.0001f)
             {
@@ -229,17 +218,20 @@ namespace Projects.Scripts.Characters
             }
 
             Vector2 forward = GetForwardDirection();
+            AimConstraintMode constraintMode = weaponDefinition != null
+                ? weaponDefinition.AimConstraintMode
+                : AimConstraintMode.Free;
 
-            switch (aimConstraintMode)
+            switch (constraintMode)
             {
                 case AimConstraintMode.ForwardOnly:
                     return forward;
 
                 case AimConstraintMode.ClampAngle:
-                    return ClampAimDirection(aimDirection.normalized, forward);
+                    return ClampAimDirection(aimDirection.normalized, forward, weaponDefinition != null ? weaponDefinition.MaxAimAngle : 45f);
 
                 case AimConstraintMode.SnapDirections:
-                    return SnapAimDirection(aimDirection.normalized, forward);
+                    return SnapAimDirection(aimDirection.normalized, forward, weaponDefinition != null ? weaponDefinition.SnapStepAngle : 45f);
 
                 default:
                     return aimDirection.normalized;
@@ -272,25 +264,86 @@ namespace Projects.Scripts.Characters
                 return new Vector2(motor.FacingDirection, 0f);
             }
 
-            if (muzzle != null)
+            if (muzzleRoot != null)
             {
-                return muzzle.right.normalized;
+                return muzzleRoot.right.normalized;
             }
 
             return Vector2.right;
         }
 
-        private Vector2 ClampAimDirection(Vector2 aimDirection, Vector2 forward)
+        private void FireWeapon(WeaponController2D weaponController, Vector2 rawAimDirection, bool firePressed, bool fireHeld)
+        {
+            if (weaponController == null || weaponController.CurrentWeapon == null)
+            {
+                return;
+            }
+
+            WeaponDefinition2D weaponDefinition = weaponController.CurrentWeapon;
+            Vector2 origin = ResolveMuzzleOrigin(weaponDefinition);
+            Vector2 constrainedAimDirection = ApplyAimConstraint(weaponDefinition, rawAimDirection);
+            Vector2 launchDirection = ResolveLaunchDirection(weaponDefinition, constrainedAimDirection);
+
+            weaponController.TickFire(
+                transform,
+                ignoredCollider,
+                origin,
+                launchDirection,
+                firePressed,
+                fireHeld);
+        }
+
+        private Vector2 ResolveMuzzleOrigin(WeaponDefinition2D weaponDefinition)
+        {
+            Vector2 baseOrigin = muzzleRoot != null ? muzzleRoot.position : (Vector2)transform.position;
+
+            if (weaponDefinition == null)
+            {
+                return baseOrigin;
+            }
+
+            Vector2 forward = GetForwardDirection();
+            Vector2 up = Vector2.up;
+            Vector2 localOffset = weaponDefinition.MuzzleLocalOffset;
+            return baseOrigin + forward * localOffset.x + up * localOffset.y;
+        }
+
+        private Vector2 ResolveLaunchDirection(WeaponDefinition2D weaponDefinition, Vector2 constrainedAimDirection)
+        {
+            if (weaponDefinition == null)
+            {
+                return constrainedAimDirection;
+            }
+
+            switch (weaponDefinition.LaunchDirectionMode)
+            {
+                case WeaponLaunchDirectionMode.FixedLocalDirection:
+                    return TransformLocalDirection(weaponDefinition.LaunchDirectionLocal);
+
+                default:
+                    return constrainedAimDirection;
+            }
+        }
+
+        private Vector2 TransformLocalDirection(Vector2 localDirection)
+        {
+            Vector2 forward = GetForwardDirection();
+            Vector2 up = Vector2.up;
+            Vector2 worldDirection = forward * localDirection.x + up * localDirection.y;
+            return worldDirection.sqrMagnitude > 0.0001f ? worldDirection.normalized : forward;
+        }
+
+        private Vector2 ClampAimDirection(Vector2 aimDirection, Vector2 forward, float maxAngle)
         {
             float signedAngle = Vector2.SignedAngle(forward, aimDirection);
-            float clampedAngle = Mathf.Clamp(signedAngle, -maxAimAngle, maxAimAngle);
+            float clampedAngle = Mathf.Clamp(signedAngle, -maxAngle, maxAngle);
             return Rotate(forward, clampedAngle);
         }
 
-        private Vector2 SnapAimDirection(Vector2 aimDirection, Vector2 forward)
+        private Vector2 SnapAimDirection(Vector2 aimDirection, Vector2 forward, float stepAngle)
         {
             float signedAngle = Vector2.SignedAngle(forward, aimDirection);
-            float snappedAngle = Mathf.Round(signedAngle / snapStepAngle) * snapStepAngle;
+            float snappedAngle = Mathf.Round(signedAngle / stepAngle) * stepAngle;
             return Rotate(forward, snappedAngle);
         }
 
