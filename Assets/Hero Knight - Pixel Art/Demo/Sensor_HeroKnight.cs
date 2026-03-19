@@ -1,41 +1,41 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Sensor_HeroKnight : MonoBehaviour {
+public class SensorHeroKnight : MonoBehaviour {
 
-    private int m_ColCount = 0;
+    private int mColCount = 0;
 
-    private float m_DisableTimer;
+    private float mDisableTimer;
 
     private void OnEnable()
     {
-        m_ColCount = 0;
+        mColCount = 0;
     }
 
     public bool State()
     {
-        if (m_DisableTimer > 0)
+        if (mDisableTimer > 0)
             return false;
-        return m_ColCount > 0;
+        return mColCount > 0;
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        m_ColCount++;
+        mColCount++;
     }
 
     void OnTriggerExit2D(Collider2D other)
     {
-        m_ColCount--;
+        mColCount--;
     }
 
     void Update()
     {
-        m_DisableTimer -= Time.deltaTime;
+        mDisableTimer -= Time.deltaTime;
     }
 
     public void Disable(float duration)
     {
-        m_DisableTimer = duration;
+        mDisableTimer = duration;
     }
 }

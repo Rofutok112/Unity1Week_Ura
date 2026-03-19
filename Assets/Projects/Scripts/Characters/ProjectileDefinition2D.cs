@@ -12,6 +12,8 @@ namespace Projects.Scripts.Characters
         [SerializeField, Min(0.01f)] private float maxDistance = 30f;
         [SerializeField, Min(0f)] private float damage = 1f;
         [SerializeField] private LayerMask hitMask = ~0;
+        [SerializeField] private AudioClip impactAudioClip;
+        [SerializeField, Range(0f, 1f)] private float impactAudioVolume = 1f;
         [SerializeField] private DelayedHomingSettings delayedHoming = new DelayedHomingSettings();
 
         public ProjectileMovementType MovementType => movementType;
@@ -21,6 +23,8 @@ namespace Projects.Scripts.Characters
         public float MaxDistance => maxDistance;
         public float Damage => damage;
         public LayerMask HitMask => hitMask;
+        public AudioClip ImpactAudioClip => impactAudioClip;
+        public float ImpactAudioVolume => impactAudioVolume;
         public DelayedHomingSettings DelayedHoming => delayedHoming;
     }
 }

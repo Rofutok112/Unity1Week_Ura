@@ -25,7 +25,7 @@ namespace Plugins.Demigiant.DOTween.Modules
         /// <param name="snapping">If TRUE the tween will smoothly snap all values to integers</param>
         public static TweenerCore<Vector3, Vector3, VectorOptions> DOMove(this Rigidbody target, Vector3 endValue, float duration, bool snapping = false)
         {
-            TweenerCore<Vector3, Vector3, VectorOptions> t = DG.Tweening.DOTween.To(() => target.position, target.MovePosition, endValue, duration);
+            var t = DG.Tweening.DOTween.To(() => target.position, target.MovePosition, endValue, duration);
             t.SetOptions(snapping).SetTarget(target);
             return t;
         }
@@ -36,7 +36,7 @@ namespace Plugins.Demigiant.DOTween.Modules
         /// <param name="snapping">If TRUE the tween will smoothly snap all values to integers</param>
         public static TweenerCore<Vector3, Vector3, VectorOptions> DOMoveX(this Rigidbody target, float endValue, float duration, bool snapping = false)
         {
-            TweenerCore<Vector3, Vector3, VectorOptions> t = DG.Tweening.DOTween.To(() => target.position, target.MovePosition, new Vector3(endValue, 0, 0), duration);
+            var t = DG.Tweening.DOTween.To(() => target.position, target.MovePosition, new Vector3(endValue, 0, 0), duration);
             t.SetOptions(AxisConstraint.X, snapping).SetTarget(target);
             return t;
         }
@@ -47,7 +47,7 @@ namespace Plugins.Demigiant.DOTween.Modules
         /// <param name="snapping">If TRUE the tween will smoothly snap all values to integers</param>
         public static TweenerCore<Vector3, Vector3, VectorOptions> DOMoveY(this Rigidbody target, float endValue, float duration, bool snapping = false)
         {
-            TweenerCore<Vector3, Vector3, VectorOptions> t = DG.Tweening.DOTween.To(() => target.position, target.MovePosition, new Vector3(0, endValue, 0), duration);
+            var t = DG.Tweening.DOTween.To(() => target.position, target.MovePosition, new Vector3(0, endValue, 0), duration);
             t.SetOptions(AxisConstraint.Y, snapping).SetTarget(target);
             return t;
         }
@@ -58,7 +58,7 @@ namespace Plugins.Demigiant.DOTween.Modules
         /// <param name="snapping">If TRUE the tween will smoothly snap all values to integers</param>
         public static TweenerCore<Vector3, Vector3, VectorOptions> DOMoveZ(this Rigidbody target, float endValue, float duration, bool snapping = false)
         {
-            TweenerCore<Vector3, Vector3, VectorOptions> t = DG.Tweening.DOTween.To(() => target.position, target.MovePosition, new Vector3(0, 0, endValue), duration);
+            var t = DG.Tweening.DOTween.To(() => target.position, target.MovePosition, new Vector3(0, 0, endValue), duration);
             t.SetOptions(AxisConstraint.Z, snapping).SetTarget(target);
             return t;
         }
@@ -69,7 +69,7 @@ namespace Plugins.Demigiant.DOTween.Modules
         /// <param name="mode">Rotation mode</param>
         public static TweenerCore<Quaternion, Vector3, QuaternionOptions> DORotate(this Rigidbody target, Vector3 endValue, float duration, RotateMode mode = RotateMode.Fast)
         {
-            TweenerCore<Quaternion, Vector3, QuaternionOptions> t = DG.Tweening.DOTween.To(() => target.rotation, target.MoveRotation, endValue, duration);
+            var t = DG.Tweening.DOTween.To(() => target.rotation, target.MoveRotation, endValue, duration);
             t.SetTarget(target);
             t.plugOptions.rotateMode = mode;
             return t;
@@ -82,7 +82,7 @@ namespace Plugins.Demigiant.DOTween.Modules
         /// <param name="up">The vector that defines in which direction up is (default: Vector3.up)</param>
         public static TweenerCore<Quaternion, Vector3, QuaternionOptions> DOLookAt(this Rigidbody target, Vector3 towards, float duration, AxisConstraint axisConstraint = AxisConstraint.None, Vector3? up = null)
         {
-            TweenerCore<Quaternion, Vector3, QuaternionOptions> t = DG.Tweening.DOTween.To(() => target.rotation, target.MoveRotation, towards, duration)
+            var t = DG.Tweening.DOTween.To(() => target.rotation, target.MoveRotation, towards, duration)
                 .SetTarget(target).SetSpecialStartupMode(SpecialStartupMode.SetLookAt);
             t.plugOptions.axisConstraint = axisConstraint;
             t.plugOptions.up = (up == null) ? Vector3.up : (Vector3)up;
@@ -104,8 +104,8 @@ namespace Plugins.Demigiant.DOTween.Modules
             if (numJumps < 1) numJumps = 1;
             float startPosY = 0;
             float offsetY = -1;
-            bool offsetYSet = false;
-            Sequence s = DG.Tweening.DOTween.Sequence();
+            var offsetYSet = false;
+            var s = DG.Tweening.DOTween.Sequence();
             Tween yTween = DG.Tweening.DOTween.To(() => target.position, target.MovePosition, new Vector3(0, jumpPower, 0), duration / (numJumps * 2))
                 .SetOptions(AxisConstraint.Y, snapping).SetEase(Ease.OutQuad).SetRelative()
                 .SetLoops(numJumps * 2, LoopType.Yoyo)
@@ -121,7 +121,7 @@ namespace Plugins.Demigiant.DOTween.Modules
                     offsetYSet = true;
                     offsetY = s.isRelative ? endValue.y : endValue.y - startPosY;
                 }
-                Vector3 pos = target.position;
+                var pos = target.position;
                 pos.y += DOVirtual.EasedValue(0, offsetY, yTween.ElapsedPercentage(), Ease.OutQuad);
                 target.MovePosition(pos);
             });
@@ -146,7 +146,7 @@ namespace Plugins.Demigiant.DOTween.Modules
         )
         {
             if (resolution < 1) resolution = 1;
-            TweenerCore<Vector3, Path, PathOptions> t = DG.Tweening.DOTween.To(PathPlugin.Get(), () => target.position, target.MovePosition, new Path(pathType, path, resolution, gizmoColor), duration)
+            var t = DG.Tweening.DOTween.To(PathPlugin.Get(), () => target.position, target.MovePosition, new Path(pathType, path, resolution, gizmoColor), duration)
                 .SetTarget(target).SetUpdate(UpdateType.Fixed);
 
             t.plugOptions.isRigidbody = true;
@@ -171,8 +171,8 @@ namespace Plugins.Demigiant.DOTween.Modules
         )
         {
             if (resolution < 1) resolution = 1;
-            Transform trans = target.transform;
-            TweenerCore<Vector3, Path, PathOptions> t = DG.Tweening.DOTween.To(PathPlugin.Get(), () => trans.localPosition, x => target.MovePosition(trans.parent == null ? x : trans.parent.TransformPoint(x)), new Path(pathType, path, resolution, gizmoColor), duration)
+            var trans = target.transform;
+            var t = DG.Tweening.DOTween.To(PathPlugin.Get(), () => trans.localPosition, x => target.MovePosition(trans.parent == null ? x : trans.parent.TransformPoint(x)), new Path(pathType, path, resolution, gizmoColor), duration)
                 .SetTarget(target).SetUpdate(UpdateType.Fixed);
 
             t.plugOptions.isRigidbody = true;
@@ -185,7 +185,7 @@ namespace Plugins.Demigiant.DOTween.Modules
             this Rigidbody target, Path path, float duration, PathMode pathMode = PathMode.Full3D
         )
         {
-            TweenerCore<Vector3, Path, PathOptions> t = DG.Tweening.DOTween.To(PathPlugin.Get(), () => target.position, target.MovePosition, path, duration)
+            var t = DG.Tweening.DOTween.To(PathPlugin.Get(), () => target.position, target.MovePosition, path, duration)
                 .SetTarget(target);
 
             t.plugOptions.isRigidbody = true;
@@ -196,8 +196,8 @@ namespace Plugins.Demigiant.DOTween.Modules
             this Rigidbody target, Path path, float duration, PathMode pathMode = PathMode.Full3D
         )
         {
-            Transform trans = target.transform;
-            TweenerCore<Vector3, Path, PathOptions> t = DG.Tweening.DOTween.To(PathPlugin.Get(), () => trans.localPosition, x => target.MovePosition(trans.parent == null ? x : trans.parent.TransformPoint(x)), path, duration)
+            var trans = target.transform;
+            var t = DG.Tweening.DOTween.To(PathPlugin.Get(), () => trans.localPosition, x => target.MovePosition(trans.parent == null ? x : trans.parent.TransformPoint(x)), path, duration)
                 .SetTarget(target);
 
             t.plugOptions.isRigidbody = true;

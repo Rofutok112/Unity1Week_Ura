@@ -28,8 +28,8 @@ namespace Projects.Scripts.Characters
                 return;
             }
 
-            Queue<Projectile2D> pool = GetPool(projectilePrefab);
-            Projectile2D projectile = pool.Count > 0 ? pool.Dequeue() : CreateInstance(projectilePrefab);
+            var pool = GetPool(projectilePrefab);
+            var projectile = pool.Count > 0 ? pool.Dequeue() : CreateInstance(projectilePrefab);
             projectile.Initialize(this, owner, ignoredCollider, origin, direction, definition);
         }
 
@@ -57,12 +57,12 @@ namespace Projects.Scripts.Characters
                 return;
             }
 
-            Queue<ImpactEffectPlayer> pool = GetImpactPool(impactEffectPrefab);
-            ImpactEffectPlayer effect = pool.Count > 0 ? pool.Dequeue() : CreateImpactInstance(impactEffectPrefab);
-            Vector2 facing = normal.sqrMagnitude > 0.0001f
+            var pool = GetImpactPool(impactEffectPrefab);
+            var effect = pool.Count > 0 ? pool.Dequeue() : CreateImpactInstance(impactEffectPrefab);
+            var facing = normal.sqrMagnitude > 0.0001f
                 ? normal.normalized
                 : (fallbackDirection.sqrMagnitude > 0.0001f ? fallbackDirection.normalized : Vector2.right);
-            float angle = Mathf.Atan2(facing.y, facing.x) * Mathf.Rad2Deg;
+            var angle = Mathf.Atan2(facing.y, facing.x) * Mathf.Rad2Deg;
             effect.transform.SetParent(transform);
             effect.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, 0f, angle));
             effect.Play(this);
@@ -87,7 +87,7 @@ namespace Projects.Scripts.Characters
 
         private Queue<Projectile2D> GetPool(Projectile2D projectilePrefab)
         {
-            if (pools.TryGetValue(projectilePrefab, out Queue<Projectile2D> pool))
+            if (pools.TryGetValue(projectilePrefab, out var pool))
             {
                 return pool;
             }
@@ -95,9 +95,9 @@ namespace Projects.Scripts.Characters
             pool = new Queue<Projectile2D>();
             pools.Add(projectilePrefab, pool);
 
-            for (int i = 0; i < prewarmCount; i++)
+            for (var i = 0; i < prewarmCount; i++)
             {
-                Projectile2D projectile = CreateInstance(projectilePrefab);
+                var projectile = CreateInstance(projectilePrefab);
                 projectile.gameObject.SetActive(false);
                 pool.Enqueue(projectile);
             }
@@ -107,7 +107,7 @@ namespace Projects.Scripts.Characters
 
         private Queue<ImpactEffectPlayer> GetImpactPool(GameObject impactEffectPrefab)
         {
-            if (impactPools.TryGetValue(impactEffectPrefab, out Queue<ImpactEffectPlayer> pool))
+            if (impactPools.TryGetValue(impactEffectPrefab, out var pool))
             {
                 return pool;
             }
@@ -115,9 +115,9 @@ namespace Projects.Scripts.Characters
             pool = new Queue<ImpactEffectPlayer>();
             impactPools.Add(impactEffectPrefab, pool);
 
-            for (int i = 0; i < prewarmCount; i++)
+            for (var i = 0; i < prewarmCount; i++)
             {
-                ImpactEffectPlayer effect = CreateImpactInstance(impactEffectPrefab);
+                var effect = CreateImpactInstance(impactEffectPrefab);
                 effect.gameObject.SetActive(false);
                 pool.Enqueue(effect);
             }
@@ -127,7 +127,7 @@ namespace Projects.Scripts.Characters
 
         private Projectile2D CreateInstance(Projectile2D projectilePrefab)
         {
-            Projectile2D projectile = Instantiate(projectilePrefab, transform);
+            var projectile = Instantiate(projectilePrefab, transform);
             projectile.SetPrefabSource(projectilePrefab);
             projectile.gameObject.SetActive(false);
             return projectile;
@@ -135,8 +135,8 @@ namespace Projects.Scripts.Characters
 
         private ImpactEffectPlayer CreateImpactInstance(GameObject impactEffectPrefab)
         {
-            GameObject effectObject = Instantiate(impactEffectPrefab, transform);
-            ImpactEffectPlayer effect = effectObject.GetComponent<ImpactEffectPlayer>();
+            var effectObject = Instantiate(impactEffectPrefab, transform);
+            var effect = effectObject.GetComponent<ImpactEffectPlayer>();
 
             if (effect == null)
             {

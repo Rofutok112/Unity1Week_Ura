@@ -1,23 +1,24 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using System;
+using UnityEngine.Serialization;
 
-public class ColorSwap_HeroKnight : MonoBehaviour
+public class ColorSwapHeroKnight : MonoBehaviour
 {
     // Accessable in Editor
-    [SerializeField] Color[] m_sourceColors;
-    [SerializeField] Color[] m_newColors;
+    [FormerlySerializedAs("m_sourceColors")] [SerializeField] Color[] mSourceColors;
+    [FormerlySerializedAs("m_newColors")] [SerializeField] Color[] mNewColors;
 
     // Private member variables
-    Texture2D m_colorSwapTex;
-    Color[] m_spriteColors; 
-    SpriteRenderer m_spriteRenderer;
-    bool m_init = false;
+    Texture2D mColorSwapTex;
+    Color[] mSpriteColors; 
+    SpriteRenderer mSpriteRenderer;
+    bool mInit = false;
 
     // Initialize values
     void Awake()
     {
-        m_spriteRenderer = GetComponent<SpriteRenderer>();
+        mSpriteRenderer = GetComponent<SpriteRenderer>();
         InitColorSwapTex();
         
         SwapDemoColors();
@@ -27,7 +28,7 @@ public class ColorSwap_HeroKnight : MonoBehaviour
     // Only possible to change colors in real time when in play mode.
     private void OnValidate()
     {
-        if (m_init)
+        if (mInit)
         {
             SwapDemoColors();
         }
@@ -36,21 +37,21 @@ public class ColorSwap_HeroKnight : MonoBehaviour
     // Uses the value from the red channel in the source color (0-255) as an index for where to place the new color into the swap texture (256x1 px)
     public void SwapDemoColors()
     {
-        for(int i = 0; i < m_sourceColors.Length && i < m_newColors.Length; i++)
+        for(var i = 0; i < mSourceColors.Length && i < mNewColors.Length; i++)
         {
-            SwapColor((int)(m_sourceColors[i].r * 255.0f), m_newColors[i]);
+            SwapColor((int)(mSourceColors[i].r * 255.0f), mNewColors[i]);
         }
-        if(m_colorSwapTex)
-            m_colorSwapTex.Apply();
+        if(mColorSwapTex)
+            mColorSwapTex.Apply();
     }
 
     public static Color ColorFromInt(int c, float alpha = 1.0f)
     {
-        int r = (c >> 16) & 0x000000FF;
-        int g = (c >> 8) & 0x000000FF;
-        int b = c & 0x000000FF;
+        var r = (c >> 16) & 0x000000FF;
+        var g = (c >> 8) & 0x000000FF;
+        var b = c & 0x000000FF;
 
-        Color ret = ColorFromIntRGB(r, g, b);
+        var ret = ColorFromIntRGB(r, g, b);
         ret.a = alpha;
 
         return ret;
@@ -63,69 +64,69 @@ public class ColorSwap_HeroKnight : MonoBehaviour
 
     public void InitColorSwapTex()
     {
-        Texture2D colorSwapTex = new Texture2D(256, 1, TextureFormat.RGBA32, false, false);
+        var colorSwapTex = new Texture2D(256, 1, TextureFormat.RGBA32, false, false);
         colorSwapTex.filterMode = FilterMode.Point;
 
-        for (int i = 0; i < colorSwapTex.width; ++i)
+        for (var i = 0; i < colorSwapTex.width; ++i)
             colorSwapTex.SetPixel(i, 0, new Color(0.0f, 0.0f, 0.0f, 0.0f));
 
         colorSwapTex.Apply();
 
-        m_spriteRenderer.material.SetTexture("_SwapTex", colorSwapTex);
+        mSpriteRenderer.material.SetTexture("_SwapTex", colorSwapTex);
 
-        m_spriteColors = new Color[colorSwapTex.width];
-        m_colorSwapTex = colorSwapTex;
-        m_init = true;
+        mSpriteColors = new Color[colorSwapTex.width];
+        mColorSwapTex = colorSwapTex;
+        mInit = true;
     }
 
     public void SwapColor(int index, Color color)
     {
         if(index >= 0 && index < 256)
         {
-            m_spriteColors[index] = color;
-            m_colorSwapTex.SetPixel(index, 0, color);
+            mSpriteColors[index] = color;
+            mColorSwapTex.SetPixel(index, 0, color);
         }
     }
 
 
     public void SwapColors(List<int> indexes, List<Color> colors)
     {
-        for (int i = 0; i < indexes.Count; ++i)
+        for (var i = 0; i < indexes.Count; ++i)
         {
-            m_spriteColors[indexes[i]] = colors[i];
-            m_colorSwapTex.SetPixel(indexes[i], 0, colors[i]);
+            mSpriteColors[indexes[i]] = colors[i];
+            mColorSwapTex.SetPixel(indexes[i], 0, colors[i]);
         }
-        m_colorSwapTex.Apply();
+        mColorSwapTex.Apply();
     }
 
     public void ClearColor(int index)
     {
-        Color c = new Color(0.0f, 0.0f, 0.0f, 0.0f);
-        m_spriteColors[index] = c;
-        m_colorSwapTex.SetPixel(index, 0, c);
+        var c = new Color(0.0f, 0.0f, 0.0f, 0.0f);
+        mSpriteColors[index] = c;
+        mColorSwapTex.SetPixel(index, 0, c);
     }
 
     public void SwapAllSpritesColorsTemporarily(Color color)
     {
-        for (int i = 0; i < m_colorSwapTex.width; ++i)
-            m_colorSwapTex.SetPixel(i, 0, color);
-        m_colorSwapTex.Apply();
+        for (var i = 0; i < mColorSwapTex.width; ++i)
+            mColorSwapTex.SetPixel(i, 0, color);
+        mColorSwapTex.Apply();
     }
 
     public void ResetAllSpritesColors()
     {
-        for (int i = 0; i < m_colorSwapTex.width; ++i)
-            m_colorSwapTex.SetPixel(i, 0, m_spriteColors[i]);
-        m_colorSwapTex.Apply();
+        for (var i = 0; i < mColorSwapTex.width; ++i)
+            mColorSwapTex.SetPixel(i, 0, mSpriteColors[i]);
+        mColorSwapTex.Apply();
     }
 
     public void ClearAllSpritesColors()
     {
-        for (int i = 0; i < m_colorSwapTex.width; ++i)
+        for (var i = 0; i < mColorSwapTex.width; ++i)
         {
-            m_colorSwapTex.SetPixel(i, 0, new Color(0.0f, 0.0f, 0.0f, 0.0f));
-            m_spriteColors[i] = new Color(0.0f, 0.0f, 0.0f, 0.0f);
+            mColorSwapTex.SetPixel(i, 0, new Color(0.0f, 0.0f, 0.0f, 0.0f));
+            mSpriteColors[i] = new Color(0.0f, 0.0f, 0.0f, 0.0f);
         }
-        m_colorSwapTex.Apply();
+        mColorSwapTex.Apply();
     }
 }

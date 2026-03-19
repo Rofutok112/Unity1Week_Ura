@@ -26,7 +26,7 @@ namespace Plugins.Demigiant.DOTween.Modules
         {
             if (endValue < 0) endValue = 0;
             else if (endValue > 1) endValue = 1;
-            TweenerCore<float, float, FloatOptions> t = DG.Tweening.DOTween.To(() => target.volume, x => target.volume = x, endValue, duration);
+            var t = DG.Tweening.DOTween.To(() => target.volume, x => target.volume = x, endValue, duration);
             t.SetTarget(target);
             return t;
         }
@@ -36,7 +36,7 @@ namespace Plugins.Demigiant.DOTween.Modules
         /// <param name="endValue">The end value to reach</param><param name="duration">The duration of the tween</param>
         public static TweenerCore<float, float, FloatOptions> DOPitch(this AudioSource target, float endValue, float duration)
         {
-            TweenerCore<float, float, FloatOptions> t = DG.Tweening.DOTween.To(() => target.pitch, x => target.pitch = x, endValue, duration);
+            var t = DG.Tweening.DOTween.To(() => target.pitch, x => target.pitch = x, endValue, duration);
             t.SetTarget(target);
             return t;
         }
@@ -52,7 +52,7 @@ namespace Plugins.Demigiant.DOTween.Modules
         /// <param name="endValue">The end value to reach</param><param name="duration">The duration of the tween</param>
         public static TweenerCore<float, float, FloatOptions> DOSetFloat(this AudioMixer target, string floatName, float endValue, float duration)
         {
-            TweenerCore<float, float, FloatOptions> t = DG.Tweening.DOTween.To(()=> {
+            var t = DG.Tweening.DOTween.To(()=> {
                     float currVal;
                     target.GetFloat(floatName, out currVal);
                     return currVal;

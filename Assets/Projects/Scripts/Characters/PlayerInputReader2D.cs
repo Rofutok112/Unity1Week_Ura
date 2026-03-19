@@ -59,10 +59,10 @@ namespace Projects.Scripts.Characters
                 return;
             }
 
-            bool attackTriggered = attackAction != null && attackAction.WasPressedThisFrame();
-            bool attackHeld = attackAction != null && attackAction.IsPressed();
-            bool interactTriggered = interactAction != null && interactAction.WasPressedThisFrame();
-            bool togglePolarityTriggered = IsTogglePolarityPressedThisFrame();
+            var attackTriggered = attackAction != null && attackAction.WasPressedThisFrame();
+            var attackHeld = attackAction != null && attackAction.IsPressed();
+            var interactTriggered = interactAction != null && interactAction.WasPressedThisFrame();
+            var togglePolarityTriggered = IsTogglePolarityPressedThisFrame();
 
             CurrentFrame = new CharacterInputFrame(
                 moveAction != null ? moveAction.ReadValue<Vector2>() : Vector2.zero,

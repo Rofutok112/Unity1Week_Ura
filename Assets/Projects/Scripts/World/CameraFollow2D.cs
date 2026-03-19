@@ -15,7 +15,7 @@ namespace Projects.Scripts.World
         {
             if (target == null)
             {
-                PlayerMotor2D playerMotor = FindFirstObjectByType<PlayerMotor2D>();
+                var playerMotor = FindFirstObjectByType<PlayerMotor2D>();
 
                 if (playerMotor != null)
                 {
@@ -31,7 +31,7 @@ namespace Projects.Scripts.World
                 return;
             }
 
-            Vector3 desiredPosition = new Vector3(
+            var desiredPosition = new Vector3(
                 target.position.x + offset.x,
                 target.position.y + offset.y,
                 transform.position.z);

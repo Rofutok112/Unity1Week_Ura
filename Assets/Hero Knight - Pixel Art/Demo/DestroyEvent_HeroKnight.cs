@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DestroyEvent_HeroKnight : MonoBehaviour
+public class DestroyEventHeroKnight : MonoBehaviour
 {
     // Destroy particles when animation has finished playing. 
     // destroyEvent() is called as an event in animations.
-    public void destroyEvent()
+    public void DestroyEvent()
     {
         Destroy(gameObject);
     }

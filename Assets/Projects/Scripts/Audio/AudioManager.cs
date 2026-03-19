@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,8 +8,9 @@ namespace Projects.Scripts.Audio
     {
         private static AudioManager _instance;
 
-        private readonly Dictionary<string, AudioClip> _clips = new();
-        private readonly Dictionary<string, AudioSource> _sources = new();
+        private readonly Dictionary<string, AudioClip> clips = new();
+        private readonly Dictionary<string, AudioSource> sources = new();
+        private readonly Queue<AudioSource> oneShotPool = new();
 
         public static void Register(string key, AudioClip clip)
         {
@@ -24,7 +26,7 @@ namespace Projects.Scripts.Audio
                 return;
             }
 
-            EnsureInstance()._clips[key] = clip;
+            EnsureInstance().clips[key] = clip;
         }
 
         public static bool Unregister(string key)
@@ -37,17 +39,17 @@ namespace Projects.Scripts.Audio
             var instance = EnsureInstance();
             instance.StopInternal(key);
 
-            if (instance._sources.Remove(key, out var source) && source != null)
+            if (instance.sources.Remove(key, out var source) && source != null)
             {
                 Destroy(source);
             }
 
-            return instance._clips.Remove(key);
+            return instance.clips.Remove(key);
         }
 
         public static bool IsRegistered(string key)
         {
-            return !string.IsNullOrWhiteSpace(key) && EnsureInstance()._clips.ContainsKey(key);
+            return !string.IsNullOrWhiteSpace(key) && EnsureInstance().clips.ContainsKey(key);
         }
 
         public static void Play(string key, float volume = 1f, bool loop = false)
@@ -81,6 +83,37 @@ namespace Projects.Scripts.Audio
             source.Play();
         }
 
+        public static void PlayOneShot(AudioClip clip, float volume = 1f)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            EnsureInstance().PlayOneShotInternal(clip, volume);
+        }
+
+        public static void PlayOneShotAtPosition(AudioClip clip, Vector3 position, float volume = 1f)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            EnsureInstance().PlayOneShotInternal(clip, volume, position, true);
+        }
+
+        public static void PlayOneShotAtPosition(string key, Vector3 position, float volume = 1f)
+        {
+            var instance = EnsureInstance();
+            if (!instance.TryGetClip(key, out var clip))
+            {
+                return;
+            }
+
+            instance.PlayOneShotInternal(clip, volume, position, true);
+        }
+
         public static void StopAll()
         {
             if (_instance == null)
@@ -88,7 +121,7 @@ namespace Projects.Scripts.Audio
                 return;
             }
 
-            foreach (var source in _instance._sources.Values)
+            foreach (var source in _instance.sources.Values)
             {
                 if (source == null)
                 {
@@ -109,6 +142,44 @@ namespace Projects.Scripts.Audio
             }
 
             _instance.StopInternal(key);
+        }
+
+        private void PlayOneShotInternal(AudioClip clip, float volume)
+        {
+            PlayOneShotInternal(clip, volume, Vector3.zero, false);
+        }
+
+        private void PlayOneShotInternal(AudioClip clip, float volume, Vector3 position, bool useWorldPosition)
+        {
+            var source = oneShotPool.Count > 0
+                ? oneShotPool.Dequeue()
+                : CreateOneShotSource();
+
+            source.transform.position = position;
+            source.clip = clip;
+            source.volume = volume;
+            source.loop = false;
+            source.spatialBlend = useWorldPosition ? 1f : 0f;
+            source.minDistance = 1f;
+            source.maxDistance = 12f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.Play();
+            StartCoroutine(ReturnOneShotAfterDelay(source, clip.length));
+        }
+
+        private IEnumerator ReturnOneShotAfterDelay(AudioSource source, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            source.Stop();
+            source.clip = null;
+            oneShotPool.Enqueue(source);
+        }
+
+        private AudioSource CreateOneShotSource()
+        {
+            var source = gameObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            return source;
         }
 
         private static AudioManager EnsureInstance()
@@ -139,7 +210,7 @@ namespace Projects.Scripts.Audio
                 return false;
             }
 
-            if (_clips.TryGetValue(key, out clip))
+            if (clips.TryGetValue(key, out clip))
             {
                 return true;
             }
@@ -150,20 +221,20 @@ namespace Projects.Scripts.Audio
 
         private AudioSource GetOrCreateSource(string key)
         {
-            if (_sources.TryGetValue(key, out var source) && source != null)
+            if (sources.TryGetValue(key, out var source) && source != null)
             {
                 return source;
             }
 
             source = gameObject.AddComponent<AudioSource>();
             source.playOnAwake = false;
-            _sources[key] = source;
+            sources[key] = source;
             return source;
         }
 
         private void StopInternal(string key)
         {
-            if (!_sources.TryGetValue(key, out var source) || source == null)
+            if (!sources.TryGetValue(key, out var source) || source == null)
             {
                 return;
             }

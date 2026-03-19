@@ -20,6 +20,8 @@ namespace Projects.Scripts.Characters
         [SerializeField, Range(0f, 1f)] private float accuracy = 0.9f;
         [SerializeField, Min(1)] private int burstCount = 3;
         [SerializeField, Min(0.01f)] private float burstInterval = 0.06f;
+        [SerializeField] private AudioClip fireAudioClip;
+        [SerializeField, Range(0f, 1f)] private float fireAudioVolume = 1f;
 
         public ProjectileDefinition2D ProjectileDefinition => projectileDefinition;
         public Projectile2D ProjectilePrefab => projectilePrefab;
@@ -36,5 +38,7 @@ namespace Projects.Scripts.Characters
         public float Accuracy => accuracy;
         public int BurstCount => burstCount;
         public float BurstInterval => burstInterval;
+        public AudioClip FireAudioClip => fireAudioClip;
+        public float FireAudioVolume => fireAudioVolume;
     }
 }

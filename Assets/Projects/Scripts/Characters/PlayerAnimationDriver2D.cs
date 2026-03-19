@@ -45,7 +45,7 @@ namespace Projects.Scripts.Characters
                 return;
             }
 
-            CharacterMotionState state = motor.CurrentState;
+            var state = motor.CurrentState;
 
             if (animator != null)
             {

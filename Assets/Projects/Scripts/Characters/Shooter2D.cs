@@ -70,9 +70,10 @@ namespace Projects.Scripts.Characters
                 return;
             }
 
-            CharacterInputFrame input = inputReader.CurrentFrame;
-            Vector2 rawAimDirection = ResolveRawAimDirection(input);
+            var input = inputReader.CurrentFrame;
+            var rawAimDirection = ResolveRawAimDirection(input);
             UpdateFacingVisuals();
+            rawAimDirection = ResolveRawAimDirection(input);
 
             FireWeapon(primaryWeaponController, rawAimDirection, input.AttackPressed, input.AttackHeld);
             FireWeapon(secondaryWeaponController, rawAimDirection, input.InteractPressed, input.InteractPressed);
@@ -85,7 +86,7 @@ namespace Projects.Scripts.Characters
                 return;
             }
 
-            float facingSign = motor.FacingDirection >= 0f ? 1f : -1f;
+            var facingSign = motor.FacingDirection >= 0f ? 1f : -1f;
 
             muzzleRoot.localPosition = new Vector3(
                 Mathf.Abs(initialMuzzleRootLocalPosition.x) * facingSign,
@@ -103,7 +104,7 @@ namespace Projects.Scripts.Characters
             Vector2 origin = muzzleRoot != null ? muzzleRoot.position : (Vector2)transform.position;
             Vector2 resolvedDirection;
 
-            if (TryGetMouseAimDirection(origin, out Vector2 mouseAimDirection))
+            if (TryGetMouseAimDirection(origin, out var mouseAimDirection))
             {
                 resolvedDirection = mouseAimDirection;
             }
@@ -137,12 +138,12 @@ namespace Projects.Scripts.Characters
                 return false;
             }
 
-            Vector2 mouseScreenPosition = Mouse.current.position.ReadValue();
+            var mouseScreenPosition = Mouse.current.position.ReadValue();
             Vector3 viewportPoint;
 
             if (targetRawImage != null)
             {
-                if (!TryGetViewportPointFromRawImage(mouseScreenPosition, out Vector2 rawImageViewport))
+                if (!TryGetViewportPointFromRawImage(mouseScreenPosition, out var rawImageViewport))
                 {
                     return false;
                 }
@@ -164,13 +165,13 @@ namespace Projects.Scripts.Characters
                 viewportPoint = screenCamera.ScreenToViewportPoint(mouseScreenPosition);
             }
 
-            float depth = worldCamera.WorldToViewportPoint(origin).z;
-            Vector3 mouseWorldPosition = worldCamera.ViewportToWorldPoint(new Vector3(
+            var depth = worldCamera.WorldToViewportPoint(origin).z;
+            var mouseWorldPosition = worldCamera.ViewportToWorldPoint(new Vector3(
                 viewportPoint.x,
                 viewportPoint.y,
                 depth));
 
-            Vector2 directionToMouse = (Vector2)mouseWorldPosition - origin;
+            var directionToMouse = (Vector2)mouseWorldPosition - origin;
 
             if (directionToMouse.sqrMagnitude <= 0.0001f)
             {
@@ -185,18 +186,18 @@ namespace Projects.Scripts.Characters
         {
             viewportPoint = default;
 
-            RectTransform rectTransform = targetRawImage.rectTransform;
-            Canvas canvas = targetRawImage.canvas;
-            Camera uiCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+            var rectTransform = targetRawImage.rectTransform;
+            var canvas = targetRawImage.canvas;
+            var uiCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
                 ? canvas.worldCamera
                 : null;
 
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, screenPosition, uiCamera, out Vector2 localPoint))
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, screenPosition, uiCamera, out var localPoint))
             {
                 return false;
             }
 
-            Rect rect = rectTransform.rect;
+            var rect = rectTransform.rect;
 
             if (!rect.Contains(localPoint))
             {
@@ -217,8 +218,8 @@ namespace Projects.Scripts.Characters
                 return GetForwardDirection();
             }
 
-            Vector2 forward = GetForwardDirection();
-            AimConstraintMode constraintMode = weaponDefinition != null
+            var forward = GetForwardDirection();
+            var constraintMode = weaponDefinition != null
                 ? weaponDefinition.AimConstraintMode
                 : AimConstraintMode.Free;
 
@@ -245,7 +246,7 @@ namespace Projects.Scripts.Characters
                 return;
             }
 
-            float horizontalOffset = aimDirection.x;
+            var horizontalOffset = aimDirection.x;
 
             if (horizontalOffset > 0.01f)
             {
@@ -279,10 +280,10 @@ namespace Projects.Scripts.Characters
                 return;
             }
 
-            WeaponDefinition2D weaponDefinition = weaponController.CurrentWeapon;
-            Vector2 origin = ResolveMuzzleOrigin(weaponDefinition);
-            Vector2 constrainedAimDirection = ApplyAimConstraint(weaponDefinition, rawAimDirection);
-            Vector2 launchDirection = ResolveLaunchDirection(weaponDefinition, constrainedAimDirection);
+            var weaponDefinition = weaponController.CurrentWeapon;
+            var origin = ResolveMuzzleOrigin(weaponDefinition);
+            var constrainedAimDirection = ApplyAimConstraint(weaponDefinition, rawAimDirection);
+            var launchDirection = ResolveLaunchDirection(weaponDefinition, constrainedAimDirection);
 
             weaponController.TickFire(
                 transform,
@@ -297,15 +298,13 @@ namespace Projects.Scripts.Characters
         {
             Vector2 baseOrigin = muzzleRoot != null ? muzzleRoot.position : (Vector2)transform.position;
 
-            if (weaponDefinition == null)
+            if (weaponDefinition == null || muzzleRoot == null)
             {
                 return baseOrigin;
             }
 
-            Vector2 forward = GetForwardDirection();
-            Vector2 up = Vector2.up;
-            Vector2 localOffset = weaponDefinition.MuzzleLocalOffset;
-            return baseOrigin + forward * localOffset.x + up * localOffset.y;
+            var localOffset = weaponDefinition.MuzzleLocalOffset;
+            return muzzleRoot.TransformPoint(new Vector3(localOffset.x, localOffset.y, 0f));
         }
 
         private Vector2 ResolveLaunchDirection(WeaponDefinition2D weaponDefinition, Vector2 constrainedAimDirection)
@@ -327,31 +326,31 @@ namespace Projects.Scripts.Characters
 
         private Vector2 TransformLocalDirection(Vector2 localDirection)
         {
-            Vector2 forward = GetForwardDirection();
-            Vector2 up = Vector2.up;
-            Vector2 worldDirection = forward * localDirection.x + up * localDirection.y;
+            var forward = GetForwardDirection();
+            var up = Vector2.up;
+            var worldDirection = forward * localDirection.x + up * localDirection.y;
             return worldDirection.sqrMagnitude > 0.0001f ? worldDirection.normalized : forward;
         }
 
         private Vector2 ClampAimDirection(Vector2 aimDirection, Vector2 forward, float maxAngle)
         {
-            float signedAngle = Vector2.SignedAngle(forward, aimDirection);
-            float clampedAngle = Mathf.Clamp(signedAngle, -maxAngle, maxAngle);
+            var signedAngle = Vector2.SignedAngle(forward, aimDirection);
+            var clampedAngle = Mathf.Clamp(signedAngle, -maxAngle, maxAngle);
             return Rotate(forward, clampedAngle);
         }
 
         private Vector2 SnapAimDirection(Vector2 aimDirection, Vector2 forward, float stepAngle)
         {
-            float signedAngle = Vector2.SignedAngle(forward, aimDirection);
-            float snappedAngle = Mathf.Round(signedAngle / stepAngle) * stepAngle;
+            var signedAngle = Vector2.SignedAngle(forward, aimDirection);
+            var snappedAngle = Mathf.Round(signedAngle / stepAngle) * stepAngle;
             return Rotate(forward, snappedAngle);
         }
 
         private static Vector2 Rotate(Vector2 vector, float degrees)
         {
-            float radians = degrees * Mathf.Deg2Rad;
-            float sin = Mathf.Sin(radians);
-            float cos = Mathf.Cos(radians);
+            var radians = degrees * Mathf.Deg2Rad;
+            var sin = Mathf.Sin(radians);
+            var cos = Mathf.Cos(radians);
             return new Vector2(
                 vector.x * cos - vector.y * sin,
                 vector.x * sin + vector.y * cos).normalized;

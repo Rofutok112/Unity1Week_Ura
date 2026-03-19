@@ -15,7 +15,7 @@ namespace Projects.Scripts.Editor
             DrawProperty("muzzleLocalOffset");
             DrawProperty("aimConstraintMode");
 
-            SerializedProperty aimConstraintMode = serializedObject.FindProperty("aimConstraintMode");
+            var aimConstraintMode = serializedObject.FindProperty("aimConstraintMode");
 
             if ((AimConstraintMode)aimConstraintMode.enumValueIndex == AimConstraintMode.ClampAngle)
             {
@@ -28,20 +28,22 @@ namespace Projects.Scripts.Editor
 
             DrawProperty("launchDirectionMode");
 
-            SerializedProperty launchDirectionMode = serializedObject.FindProperty("launchDirectionMode");
+            var launchDirectionMode = serializedObject.FindProperty("launchDirectionMode");
 
             if ((WeaponLaunchDirectionMode)launchDirectionMode.enumValueIndex == WeaponLaunchDirectionMode.FixedLocalDirection)
             {
                 DrawProperty("launchDirectionLocal");
             }
 
+            DrawProperty("fireAudioClip");
+            DrawProperty("fireAudioVolume");
             DrawProperty("fireMode");
             DrawProperty("fireInterval");
             DrawProperty("pelletsPerShot");
             DrawProperty("spreadAngle");
             DrawProperty("accuracy");
 
-            SerializedProperty fireMode = serializedObject.FindProperty("fireMode");
+            var fireMode = serializedObject.FindProperty("fireMode");
 
             if ((WeaponFireMode)fireMode.enumValueIndex == WeaponFireMode.Burst)
             {

@@ -1,4 +1,6 @@
+using Projects.Scripts.Audio;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace Projects.Scripts.Characters
 {
@@ -8,6 +10,7 @@ namespace Projects.Scripts.Characters
 
         private Transform owner;
         private Transform lockedTarget;
+        private readonly HashSet<HomingTarget2D> targetBuffer = new HashSet<HomingTarget2D>();
         private Collider2D ignoredCollider;
         private Vector2 direction;
         private Vector2 position;
@@ -18,9 +21,13 @@ namespace Projects.Scripts.Characters
         private float homingDelayRemaining;
         private LayerMask hitMask;
         private GameObject impactEffectPrefab;
+        private AudioClip impactAudioClip;
+        private float impactAudioVolume;
         private ProjectileMovementType movementType;
         private DelayedHomingSettings delayedHoming;
         private ProjectileSpawner2D despawnTarget;
+        private float noiseTime;
+        private float noiseSeed;
 
         public Projectile2D PrefabSource { get; private set; }
 
@@ -48,9 +55,13 @@ namespace Projects.Scripts.Characters
             distanceRemaining = definition.MaxDistance;
             hitMask = definition.HitMask;
             impactEffectPrefab = definition.ImpactEffectPrefab;
+            impactAudioClip = definition.ImpactAudioClip;
+            impactAudioVolume = definition.ImpactAudioVolume;
             movementType = definition.MovementType;
             delayedHoming = definition.DelayedHoming;
             homingDelayRemaining = delayedHoming != null ? delayedHoming.HomingDelay : 0f;
+            noiseTime = 0f;
+            noiseSeed = Random.Range(0f, 1000f);
             lockedTarget = movementType == ProjectileMovementType.DelayedHoming
                 ? AcquireTarget()
                 : null;
@@ -71,7 +82,7 @@ namespace Projects.Scripts.Characters
 
         private void Update()
         {
-            float deltaTime = Time.deltaTime;
+            var deltaTime = Time.deltaTime;
             lifetimeRemaining -= deltaTime;
 
             if (lifetimeRemaining <= 0f || distanceRemaining <= 0f)
@@ -82,19 +93,20 @@ namespace Projects.Scripts.Characters
 
             UpdateDirection(deltaTime);
 
-            float stepDistance = Mathf.Min(speed * deltaTime, distanceRemaining);
-            Vector2 nextPosition = position + direction * stepDistance;
-            Vector2 castDirection = nextPosition - position;
-            float castDistance = castDirection.magnitude;
+            var stepDistance = Mathf.Min(speed * deltaTime, distanceRemaining);
+            var nextPosition = position + direction * stepDistance;
+            var castDirection = nextPosition - position;
+            var castDistance = castDirection.magnitude;
 
             if (castDistance > 0f)
             {
-                RaycastHit2D hit = Physics2D.Raycast(position, castDirection / castDistance, castDistance, hitMask);
+                var hit = Physics2D.Raycast(position, castDirection / castDistance, castDistance, hitMask);
 
                 if (hit.collider != null && hit.collider != ignoredCollider)
                 {
                     transform.position = hit.point;
                     SpawnImpactEffect(hit.point, hit.normal);
+                    AudioManager.PlayOneShotAtPosition(impactAudioClip, hit.point, impactAudioVolume);
                     ApplyDamage(hit);
                     Despawn();
                     return;
@@ -109,14 +121,14 @@ namespace Projects.Scripts.Characters
 
         private void ApplyDamage(RaycastHit2D hit)
         {
-            IDamageable damageable = hit.collider.GetComponentInParent<IDamageable>();
+            var damageable = hit.collider.GetComponentInParent<IDamageable>();
 
             if (damageable == null)
             {
                 return;
             }
 
-            DamageContext context = new DamageContext(owner, hit.point, direction, damage);
+            var context = new DamageContext(owner, hit.point, direction, damage);
             damageable.ApplyDamage(context);
         }
 
@@ -144,35 +156,63 @@ namespace Projects.Scripts.Characters
                 return;
             }
 
-            Vector2 facing = normal.sqrMagnitude > 0.0001f ? normal.normalized : direction;
-            float angle = Mathf.Atan2(facing.y, facing.x) * Mathf.Rad2Deg;
+            var facing = normal.sqrMagnitude > 0.0001f ? normal.normalized : direction;
+            var angle = Mathf.Atan2(facing.y, facing.x) * Mathf.Rad2Deg;
             Instantiate(impactEffectPrefab, point, Quaternion.Euler(0f, 0f, angle));
         }
 
         private void UpdateDirection(float deltaTime)
         {
-            if (movementType != ProjectileMovementType.DelayedHoming || lockedTarget == null || delayedHoming == null)
+            if (movementType != ProjectileMovementType.DelayedHoming || delayedHoming == null)
             {
                 return;
             }
+
+            noiseTime += deltaTime;
 
             if (homingDelayRemaining > 0f)
             {
                 homingDelayRemaining -= deltaTime;
+                ApplyNoise(deltaTime);
                 return;
             }
 
-            Vector2 toTarget = (Vector2)lockedTarget.position - position;
+            if (lockedTarget == null)
+            {
+                lockedTarget = AcquireTarget();
+
+                if (lockedTarget == null)
+                {
+                    ApplyNoise(deltaTime);
+                    return;
+                }
+            }
+
+            var toTarget = (Vector2)lockedTarget.position - position;
 
             if (toTarget.sqrMagnitude <= 0.0001f)
             {
                 return;
             }
 
-            float maxTurnAngle = delayedHoming.TurnRate * deltaTime;
-            float signedAngle = Vector2.SignedAngle(direction, toTarget.normalized);
-            float clampedAngle = Mathf.Clamp(signedAngle, -maxTurnAngle, maxTurnAngle);
+            var maxTurnAngle = delayedHoming.TurnRate * deltaTime;
+            var signedAngle = Vector2.SignedAngle(direction, toTarget.normalized);
+            var clampedAngle = Mathf.Clamp(signedAngle, -maxTurnAngle, maxTurnAngle);
             direction = Rotate(direction, clampedAngle);
+
+            ApplyNoise(deltaTime);
+        }
+
+        private void ApplyNoise(float deltaTime)
+        {
+            if (delayedHoming == null || delayedHoming.NoiseAmplitude <= 0f)
+            {
+                return;
+            }
+
+            var noise = Mathf.PerlinNoise1D(noiseSeed + noiseTime * delayedHoming.NoiseFrequency);
+            var noiseAngle = (noise - 0.5f) * 2f * delayedHoming.NoiseAmplitude * deltaTime;
+            direction = Rotate(direction, noiseAngle);
         }
 
         private Transform AcquireTarget()
@@ -182,62 +222,76 @@ namespace Projects.Scripts.Characters
                 return null;
             }
 
-            Collider2D[] hits = Physics2D.OverlapCircleAll(position, delayedHoming.LockOnRadius, delayedHoming.TargetMask);
-            Transform bestTarget = null;
-            float bestScore = float.NegativeInfinity;
+            var hits = Physics2D.OverlapCircleAll(position, delayedHoming.LockOnRadius, delayedHoming.TargetMask);
+            targetBuffer.Clear();
+            HomingTarget2D bestTarget = null;
+            var bestScore = float.NegativeInfinity;
 
-            for (int i = 0; i < hits.Length; i++)
+            for (var i = 0; i < hits.Length; i++)
             {
-                Collider2D candidate = hits[i];
+                var candidate = hits[i];
 
                 if (candidate == null || candidate == ignoredCollider)
                 {
                     continue;
                 }
 
-                if (owner != null && candidate.transform.root == owner.root)
+                if (owner != null && candidate.transform.IsChildOf(owner))
                 {
                     continue;
                 }
 
-                Vector2 toCandidate = (Vector2)candidate.bounds.center - position;
+                var homingTarget = candidate.GetComponentInParent<HomingTarget2D>();
+
+                if (homingTarget == null || !homingTarget.CanBeTargeted || !targetBuffer.Add(homingTarget))
+                {
+                    continue;
+                }
+
+                if (owner != null && homingTarget.transform.IsChildOf(owner))
+                {
+                    continue;
+                }
+
+                var targetPosition = (Vector2)homingTarget.AimPoint.position;
+                var toCandidate = targetPosition - position;
 
                 if (toCandidate.sqrMagnitude <= 0.0001f)
                 {
                     continue;
                 }
 
-                float angle = Vector2.Angle(direction, toCandidate);
+                var angle = Vector2.Angle(direction, toCandidate);
 
                 if (angle > delayedHoming.MaxLockAngle)
                 {
                     continue;
                 }
 
-                float distance = toCandidate.magnitude;
-                float score = -angle * 10f - distance;
+                var distance = toCandidate.magnitude;
+                var score = homingTarget.Priority * 1000f - angle * 10f - distance;
 
                 if (score > bestScore)
                 {
                     bestScore = score;
-                    bestTarget = candidate.transform;
+                    bestTarget = homingTarget;
                 }
             }
 
-            return bestTarget;
+            return bestTarget != null ? bestTarget.AimPoint : null;
         }
 
         private void UpdateVisualRotation()
         {
-            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            var angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
         }
 
         private static Vector2 Rotate(Vector2 vector, float degrees)
         {
-            float radians = degrees * Mathf.Deg2Rad;
-            float sin = Mathf.Sin(radians);
-            float cos = Mathf.Cos(radians);
+            var radians = degrees * Mathf.Deg2Rad;
+            var sin = Mathf.Sin(radians);
+            var cos = Mathf.Cos(radians);
             return new Vector2(
                 vector.x * cos - vector.y * sin,
                 vector.x * sin + vector.y * cos).normalized;

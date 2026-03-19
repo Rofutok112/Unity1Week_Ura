@@ -17,8 +17,10 @@ namespace Projects.Scripts.Editor
             DrawProperty("maxDistance");
             DrawProperty("damage");
             DrawProperty("hitMask");
+            DrawProperty("impactAudioClip");
+            DrawProperty("impactAudioVolume");
 
-            SerializedProperty movementType = serializedObject.FindProperty("movementType");
+            var movementType = serializedObject.FindProperty("movementType");
 
             if ((ProjectileMovementType)movementType.enumValueIndex == ProjectileMovementType.DelayedHoming)
             {

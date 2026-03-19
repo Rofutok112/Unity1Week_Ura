@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e61c44a03b0f0e2428855aa12095f2f7, type: 3}
-  m_Name: ProjectileDefinition2D
+  m_Name: HomingProjectile
   m_EditorClassIdentifier: Assembly-CSharp::Projects.Scripts.Characters.ProjectileDefinition2D
   movementType: 1
   impactEffectPrefab: {fileID: 137866759594399289, guid: 285eae89619436f43a149fc31fa1d95e, type: 3}
@@ -21,11 +21,15 @@ MonoBehaviour:
   hitMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  impactAudioClip: {fileID: 8300000, guid: 2996f230112575b4a96b6b26393ece7a, type: 3}
+  impactAudioVolume: 0.106
   delayedHoming:
-    homingDelay: 0.3
+    homingDelay: 1
     lockOnRadius: 100
     maxLockAngle: 180
-    turnRate: 720
+    turnRate: 360
     targetMask:
       serializedVersion: 2
-      m_Bits: 4294967295
+      m_Bits: 64
+    noiseAmplitude: 500
+    noiseFrequency: 3

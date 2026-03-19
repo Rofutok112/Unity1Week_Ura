@@ -58,8 +58,8 @@ namespace Plugins.Demigiant.DOTween.Modules
         // Just used to preserve methods when building, never called
         static void Preserver()
         {
-            Assembly[] loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
-            MethodInfo mi = typeof(MonoBehaviour).GetMethod("Stub");
+            var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var mi = typeof(MonoBehaviour).GetMethod("Stub");
         }
 #pragma warning restore
 #endif
@@ -131,10 +131,10 @@ namespace Plugins.Demigiant.DOTween.Modules
                 MonoBehaviour target, bool tweenRigidbody, bool isLocal, Path path, float duration, PathMode pathMode
             ){
                 TweenerCore<Vector3, Path, PathOptions> t = null;
-                bool rBodyFoundAndTweened = false;
+                var rBodyFoundAndTweened = false;
 #if !DOTWEEN_NOPHYSICS // PHYSICS_MARKER
                 if (tweenRigidbody) {
-                    Rigidbody rBody = target.GetComponent<Rigidbody>();
+                    var rBody = target.GetComponent<Rigidbody>();
                     if (rBody != null) {
                         rBodyFoundAndTweened = true;
                         t = isLocal
@@ -145,7 +145,7 @@ namespace Plugins.Demigiant.DOTween.Modules
 #endif
 #if !DOTWEEN_NOPHYSICS2D // PHYSICS2D_MARKER
                 if (!rBodyFoundAndTweened && tweenRigidbody) {
-                    Rigidbody2D rBody2D = target.GetComponent<Rigidbody2D>();
+                    var rBody2D = target.GetComponent<Rigidbody2D>();
                     if (rBody2D != null) {
                         rBodyFoundAndTweened = true;
                         t = isLocal

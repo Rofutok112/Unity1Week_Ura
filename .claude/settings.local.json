@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find 'D:\\\\Users\\\\rento\\\\Documents\\\\GitHub Projects\\\\Unity1Week_Ura\\\\Assets\\\\Projects' -type f \\\\\\(-name *.prefab -o -name *.yaml -o -name *.yml \\\\\\))"
+    ]
+  }
+}

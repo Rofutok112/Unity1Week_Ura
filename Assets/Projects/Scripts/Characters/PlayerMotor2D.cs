@@ -2,15 +2,13 @@ using UnityEngine;
 
 namespace Projects.Scripts.Characters
 {
-    [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(Collider2D))]
     public sealed class PlayerMotor2D : MonoBehaviour
     {
-        private const int GroundHitBufferSize = 8;
+        private const int CastHitBufferSize = 8;
 
         [Header("References")]
         [SerializeField] private PlayerInputReader2D inputReader;
-        [SerializeField] private Transform groundCheckPoint;
 
         [Header("Movement")]
         [SerializeField, Min(0f)] private float moveSpeed = 6f;
@@ -20,6 +18,13 @@ namespace Projects.Scripts.Characters
         [SerializeField, Min(0f)] private float groundDeceleration = 80f;
         [SerializeField, Min(0f)] private float airAcceleration = 35f;
         [SerializeField, Min(0f)] private float airDeceleration = 40f;
+        [SerializeField, Min(0f)] private float gravityScale = 3f;
+
+        [Header("Collision")]
+        [SerializeField] private LayerMask groundLayers = ~0;
+        [SerializeField, Min(0.001f)] private float collisionSkinWidth = 0.02f;
+        [SerializeField, Min(0.01f)] private float groundProbeDistance = 0.08f;
+        [SerializeField, Range(0.1f, 1f)] private float groundNormalThreshold = 0.6f;
 
         [Header("Dash Sprint")]
         [SerializeField, Min(0.01f)] private float doubleTapWindow = 0.25f;
@@ -37,14 +42,14 @@ namespace Projects.Scripts.Characters
         [SerializeField, Min(1f)] private float lowJumpGravityMultiplier = 1.8f;
         [SerializeField, Min(0f)] private float maxFallSpeed = 18f;
 
-        [Header("Ground Check")]
-        [SerializeField] private LayerMask groundLayers = ~0;
-        [SerializeField, Min(0.01f)] private float groundCheckRadius = 0.18f;
-        [SerializeField] private Vector2 groundCheckOffset = new Vector2(0f, -0.5f);
+        private readonly RaycastHit2D[] castHits = new RaycastHit2D[CastHitBufferSize];
+        private readonly Collider2D[] overlapHits = new Collider2D[CastHitBufferSize];
+        private readonly Collider2D[] groundHits = new Collider2D[CastHitBufferSize];
 
-        private Rigidbody2D rb;
         private Collider2D bodyCollider;
         private CharacterInputFrame currentInput;
+        private ContactFilter2D collisionFilter;
+        private Vector2 velocity;
         private float facingDirection = 1f;
         private float coyoteCounter;
         private float jumpBufferCounter;
@@ -57,7 +62,6 @@ namespace Projects.Scripts.Characters
         private bool isGrounded;
         private bool wasGrounded;
         private bool jumpConsumed;
-        private readonly Collider2D[] groundHits = new Collider2D[GroundHitBufferSize];
 
         public CharacterMotionState CurrentState { get; private set; }
 
@@ -78,13 +82,19 @@ namespace Projects.Scripts.Characters
 
         private void Awake()
         {
-            rb = GetComponent<Rigidbody2D>();
             bodyCollider = GetComponent<Collider2D>();
 
             if (inputReader == null)
             {
                 inputReader = GetComponent<PlayerInputReader2D>();
             }
+
+            collisionFilter = new ContactFilter2D
+            {
+                useLayerMask = true,
+                layerMask = groundLayers,
+                useTriggers = false
+            };
         }
 
         private void Update()
@@ -98,43 +108,39 @@ namespace Projects.Scripts.Characters
             }
             else
             {
-                jumpBufferCounter -= Time.deltaTime;
+                jumpBufferCounter = Mathf.Max(0f, jumpBufferCounter - Time.deltaTime);
             }
 
-            UpdateGroundState();
-
-            if (isGrounded)
-            {
-                coyoteCounter = coyoteTime;
-
-                if (!wasGrounded)
-                {
-                    jumpConsumed = false;
-                }
-            }
-            else
-            {
-                coyoteCounter -= Time.deltaTime;
-            }
-
-            wasGrounded = isGrounded;
             RefreshMotionState();
         }
 
         private void FixedUpdate()
         {
+            Physics2D.SyncTransforms();
+            UpdateGroundState();
+            UpdateGroundTimers(Time.fixedDeltaTime);
             UpdateHorizontalVelocity();
             TryConsumeJump();
             ApplyExtraGravity();
             ClampFallSpeed();
+            MoveCharacter(Time.fixedDeltaTime);
+            ResolveOverlaps();
+            UpdateGroundState();
+            UpdateGroundTimers(0f);
+
+            if (isGrounded && velocity.y <= 0f)
+            {
+                velocity.y = 0f;
+            }
+
             RefreshMotionState();
         }
 
         private void UpdateHorizontalVelocity()
         {
-            float moveInputX = currentInput.Move.x;
-            float targetSpeed = moveInputX * moveSpeed;
-            bool sprinting = IsSprintActive();
+            var moveInputX = currentInput.Move.x;
+            var targetSpeed = moveInputX * moveSpeed;
+            var sprinting = IsSprintActive();
 
             if (dashTimer > 0f && dashDirection != 0)
             {
@@ -150,7 +156,7 @@ namespace Projects.Scripts.Characters
                 targetSpeed *= crouchSpeedMultiplier;
             }
 
-            float acceleration = Mathf.Abs(targetSpeed) > 0.01f
+            var acceleration = Mathf.Abs(targetSpeed) > 0.01f
                 ? (isGrounded ? groundAcceleration : airAcceleration)
                 : (isGrounded ? groundDeceleration : airDeceleration);
 
@@ -160,15 +166,14 @@ namespace Projects.Scripts.Characters
                 dashTimer = Mathf.Max(0f, dashTimer - Time.fixedDeltaTime);
             }
 
-            float newVelocityX = Mathf.MoveTowards(rb.linearVelocity.x, targetSpeed, acceleration * Time.fixedDeltaTime);
-            rb.linearVelocity = new Vector2(newVelocityX, rb.linearVelocity.y);
+            velocity.x = Mathf.MoveTowards(velocity.x, targetSpeed, acceleration * Time.fixedDeltaTime);
         }
 
         private void UpdateDashSprintState()
         {
-            float moveInputX = currentInput.Move.x;
-            int moveDirection = Mathf.Abs(moveInputX) >= moveTapThreshold ? (moveInputX > 0f ? 1 : -1) : 0;
-            bool freshTap = moveDirection != 0 && Mathf.Abs(previousMoveInputX) < moveTapThreshold;
+            var moveInputX = currentInput.Move.x;
+            var moveDirection = Mathf.Abs(moveInputX) >= moveTapThreshold ? (moveInputX > 0f ? 1 : -1) : 0;
+            var freshTap = moveDirection != 0 && Mathf.Abs(previousMoveInputX) < moveTapThreshold;
 
             if (freshTap)
             {
@@ -187,7 +192,7 @@ namespace Projects.Scripts.Characters
             {
                 sprintLatchDirection = 0;
             }
-            else if (sprintLatchDirection != 0 && Mathf.Sign(moveInputX) != sprintLatchDirection)
+            else if (sprintLatchDirection != 0 && !Mathf.Approximately(Mathf.Sign(moveInputX), sprintLatchDirection))
             {
                 sprintLatchDirection = 0;
             }
@@ -212,7 +217,7 @@ namespace Projects.Scripts.Characters
                 return Mathf.Abs(currentInput.Move.x) > 0.01f;
             }
 
-            return sprintLatchDirection != 0 && Mathf.Sign(currentInput.Move.x) == sprintLatchDirection;
+            return sprintLatchDirection != 0 && Mathf.Approximately(Mathf.Sign(currentInput.Move.x), sprintLatchDirection);
         }
 
         private void TryConsumeJump()
@@ -222,10 +227,10 @@ namespace Projects.Scripts.Characters
                 return;
             }
 
-            float gravity = Mathf.Abs(Physics2D.gravity.y * rb.gravityScale);
-            float jumpVelocity = Mathf.Sqrt(2f * gravity * jumpHeight);
+            var gravity = Mathf.Abs(Physics2D.gravity.y * gravityScale);
+            var jumpVelocity = Mathf.Sqrt(2f * gravity * jumpHeight);
 
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpVelocity);
+            velocity.y = jumpVelocity;
             jumpConsumed = true;
             jumpBufferCounter = 0f;
             coyoteCounter = 0f;
@@ -234,47 +239,120 @@ namespace Projects.Scripts.Characters
 
         private void ApplyExtraGravity()
         {
-            float verticalVelocity = rb.linearVelocity.y;
-
-            if (verticalVelocity < 0f)
+            if (isGrounded && velocity.y <= 0f)
             {
-                verticalVelocity += Physics2D.gravity.y * (fallGravityMultiplier - 1f) * rb.gravityScale * Time.fixedDeltaTime;
-            }
-            else if (verticalVelocity > 0f && !currentInput.JumpHeld)
-            {
-                verticalVelocity += Physics2D.gravity.y * (lowJumpGravityMultiplier - 1f) * rb.gravityScale * Time.fixedDeltaTime;
+                velocity.y = 0f;
+                return;
             }
 
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, verticalVelocity);
+            var gravityStep = Physics2D.gravity.y * gravityScale * Time.fixedDeltaTime;
+            var gravityMultiplier = 1f;
+
+            if (velocity.y < 0f)
+            {
+                gravityMultiplier = fallGravityMultiplier;
+            }
+            else if (velocity.y > 0f && !currentInput.JumpHeld)
+            {
+                gravityMultiplier = lowJumpGravityMultiplier;
+            }
+
+            velocity.y += gravityStep * gravityMultiplier;
         }
 
         private void ClampFallSpeed()
         {
-            if (rb.linearVelocity.y < -maxFallSpeed)
+            if (velocity.y < -maxFallSpeed)
             {
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, -maxFallSpeed);
+                velocity.y = -maxFallSpeed;
+            }
+        }
+
+        private void MoveCharacter(float deltaTime)
+        {
+            MoveAlongAxis(Vector2.right, velocity.x * deltaTime, false);
+            MoveAlongAxis(Vector2.up, velocity.y * deltaTime, true);
+        }
+
+        private void MoveAlongAxis(Vector2 axis, float distance, bool vertical)
+        {
+            if (Mathf.Abs(distance) <= 0.0001f)
+            {
+                return;
+            }
+
+            var direction = Mathf.Sign(distance) * axis;
+            var castDistance = Mathf.Abs(distance) + collisionSkinWidth;
+            var hitCount = bodyCollider.Cast(direction, collisionFilter, castHits, castDistance);
+            var allowedDistance = Mathf.Abs(distance);
+
+            for (var i = 0; i < hitCount; i++)
+            {
+                var hit = castHits[i];
+
+                if (hit.collider == null)
+                {
+                    continue;
+                }
+
+                var candidateDistance = Mathf.Max(0f, hit.distance - collisionSkinWidth);
+                allowedDistance = Mathf.Min(allowedDistance, candidateDistance);
+
+                if (vertical && direction.y < 0f && hit.normal.y >= groundNormalThreshold)
+                {
+                    isGrounded = true;
+                }
+            }
+
+            transform.position += (Vector3)(direction * allowedDistance);
+            Physics2D.SyncTransforms();
+
+            if (allowedDistance + 0.0001f < Mathf.Abs(distance))
+            {
+                if (vertical)
+                {
+                    velocity.y = 0f;
+                }
+                else
+                {
+                    velocity.x = 0f;
+                }
             }
         }
 
         private void UpdateGroundState()
         {
-            Vector2 checkPosition = groundCheckPoint != null
-                ? groundCheckPoint.position
-                : (Vector2)transform.position + groundCheckOffset;
-
-            ContactFilter2D contactFilter = new ContactFilter2D
-            {
-                useLayerMask = true,
-                layerMask = groundLayers,
-                useTriggers = false
-            };
-
-            int hitCount = Physics2D.OverlapCircle(checkPosition, groundCheckRadius, contactFilter, groundHits);
             isGrounded = false;
+            var hitCount = bodyCollider.Cast(Vector2.down, collisionFilter, castHits, groundProbeDistance + collisionSkinWidth);
 
-            for (int i = 0; i < hitCount; i++)
+            for (var i = 0; i < hitCount; i++)
             {
-                Collider2D hit = groundHits[i];
+                var hit = castHits[i];
+
+                if (hit.collider == null || hit.normal.y < groundNormalThreshold)
+                {
+                    continue;
+                }
+
+                isGrounded = true;
+                break;
+            }
+
+            if (isGrounded)
+            {
+                return;
+            }
+
+            var bounds = bodyCollider.bounds;
+            var checkCenter = new Vector2(bounds.center.x, bounds.min.y - (groundProbeDistance * 0.5f));
+            var checkSize = new Vector2(
+                Mathf.Max(0.01f, bounds.size.x - collisionSkinWidth * 2f),
+                Mathf.Max(0.01f, groundProbeDistance + collisionSkinWidth));
+            var groundHitCount = Physics2D.OverlapBox(checkCenter, checkSize, 0f, collisionFilter, groundHits);
+
+            for (var i = 0; i < groundHitCount; i++)
+            {
+                var hit = groundHits[i];
                 groundHits[i] = null;
 
                 if (hit == null || hit == bodyCollider)
@@ -287,11 +365,63 @@ namespace Projects.Scripts.Characters
             }
         }
 
+        private void ResolveOverlaps()
+        {
+            var hitCount = Physics2D.OverlapCollider(bodyCollider, collisionFilter, overlapHits);
+
+            for (var i = 0; i < hitCount; i++)
+            {
+                var hit = overlapHits[i];
+                overlapHits[i] = null;
+
+                if (hit == null || hit == bodyCollider)
+                {
+                    continue;
+                }
+
+                var distance = bodyCollider.Distance(hit);
+
+                if (distance.isOverlapped)
+                {
+                    transform.position += (Vector3)(distance.normal * distance.distance);
+                    Physics2D.SyncTransforms();
+
+                    if (distance.normal.y >= groundNormalThreshold)
+                    {
+                        isGrounded = true;
+
+                        if (velocity.y < 0f)
+                        {
+                            velocity.y = 0f;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void UpdateGroundTimers(float deltaTime)
+        {
+            if (isGrounded)
+            {
+                coyoteCounter = coyoteTime;
+
+                if (!wasGrounded)
+                {
+                    jumpConsumed = false;
+                }
+            }
+            else
+            {
+                coyoteCounter = Mathf.Max(0f, coyoteCounter - deltaTime);
+            }
+
+            wasGrounded = isGrounded;
+        }
+
         private void RefreshMotionState()
         {
-            Vector2 velocity = rb != null ? rb.linearVelocity : Vector2.zero;
-            bool running = IsSprintActive() || dashTimer > 0f;
-            bool crouching = currentInput.CrouchHeld && isGrounded;
+            var running = IsSprintActive() || dashTimer > 0f;
+            var crouching = currentInput.CrouchHeld && isGrounded;
 
             CurrentState = new CharacterMotionState(
                 velocity,
@@ -307,10 +437,17 @@ namespace Projects.Scripts.Characters
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.cyan;
-            Vector2 checkPosition = groundCheckPoint != null
-                ? groundCheckPoint.position
-                : (Vector2)transform.position + groundCheckOffset;
-            Gizmos.DrawWireSphere(checkPosition, groundCheckRadius);
+
+            if (bodyCollider != null && Application.isPlaying)
+            {
+                var bounds = bodyCollider.bounds;
+                Vector2 checkCenter = new Vector2(bounds.center.x, bounds.min.y - (groundProbeDistance * 0.5f));
+                Vector2 checkSize = new Vector2(
+                    Mathf.Max(0.01f, bounds.size.x - collisionSkinWidth * 2f),
+                    Mathf.Max(0.01f, groundProbeDistance + collisionSkinWidth));
+                Gizmos.DrawWireCube(checkCenter, checkSize);
+                return;
+            }
         }
     }
 }

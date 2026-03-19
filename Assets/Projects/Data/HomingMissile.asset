@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cd9e46c257197a84081a4382975fa958, type: 3}
-  m_Name: WeaponDefinition2D
+  m_Name: HomingMissile
   m_EditorClassIdentifier: Assembly-CSharp::Projects.Scripts.Characters.WeaponDefinition2D
   projectileDefinition: {fileID: 11400000, guid: 076002ed4bacf114083c29d0dc6187a4, type: 2}
   projectilePrefab: {fileID: 2161866563019886984, guid: 927439bb0c4407545817d222f6769515, type: 3}
@@ -22,8 +22,10 @@ MonoBehaviour:
   launchDirectionLocal: {x: 0, y: 1}
   fireMode: 2
   fireInterval: 1
-  pelletsPerShot: 3
+  pelletsPerShot: 1
   spreadAngle: 30
-  accuracy: 0
-  burstCount: 3
-  burstInterval: 0.15
+  accuracy: 1
+  burstCount: 4
+  burstInterval: 0.06
+  fireAudioClip: {fileID: 8300000, guid: 334bf487da8d0b64ab24d4f20a0f5882, type: 3}
+  fireAudioVolume: 0.122

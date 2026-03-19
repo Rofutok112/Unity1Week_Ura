@@ -78,7 +78,7 @@ namespace Projects.Scripts.Characters
                 return;
             }
 
-            for (int i = 0; i < particleSystems.Length; i++)
+            for (var i = 0; i < particleSystems.Length; i++)
             {
                 if (particleSystems[i] == null)
                 {
@@ -92,13 +92,13 @@ namespace Projects.Scripts.Characters
 
         private float ResolveLifetime()
         {
-            float duration = fallbackLifetime;
+            var duration = fallbackLifetime;
 
             if (animator != null && animator.runtimeAnimatorController != null)
             {
-                AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+                var clips = animator.runtimeAnimatorController.animationClips;
 
-                for (int i = 0; i < clips.Length; i++)
+                for (var i = 0; i < clips.Length; i++)
                 {
                     if (clips[i] == null)
                     {
@@ -124,17 +124,17 @@ namespace Projects.Scripts.Characters
 
             if (particleSystems != null)
             {
-                for (int i = 0; i < particleSystems.Length; i++)
+                for (var i = 0; i < particleSystems.Length; i++)
                 {
-                    ParticleSystem particleSystem = particleSystems[i];
+                    var particleSystem = particleSystems[i];
 
                     if (particleSystem == null)
                     {
                         continue;
                     }
 
-                    ParticleSystem.MainModule main = particleSystem.main;
-                    float startLifetime = main.startLifetime.mode == ParticleSystemCurveMode.TwoConstants
+                    var main = particleSystem.main;
+                    var startLifetime = main.startLifetime.mode == ParticleSystemCurveMode.TwoConstants
                         ? main.startLifetime.constantMax
                         : main.startLifetime.constant;
                     duration = Mathf.Max(duration, main.duration + startLifetime);

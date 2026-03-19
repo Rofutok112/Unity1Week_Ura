@@ -1,3 +1,4 @@
+using Projects.Scripts.Audio;
 using UnityEngine;
 
 namespace Projects.Scripts.Characters
@@ -90,25 +91,27 @@ namespace Projects.Scripts.Characters
 
         private void Fire(Transform owner, Collider2D ignoredCollider, Vector2 origin, Vector2 aimDirection)
         {
-            Vector2 normalizedAim = aimDirection.sqrMagnitude > 0.0001f ? aimDirection.normalized : Vector2.right;
-            int pelletCount = Mathf.Max(1, currentWeapon.PelletsPerShot);
-            float spread = currentWeapon.SpreadAngle;
-            float inaccuracyAngle = spread * (1f - currentWeapon.Accuracy);
+            var normalizedAim = aimDirection.sqrMagnitude > 0.0001f ? aimDirection.normalized : Vector2.right;
+            var pelletCount = Mathf.Max(1, currentWeapon.PelletsPerShot);
+            var spread = currentWeapon.SpreadAngle;
+            var inaccuracyAngle = spread * (1f - currentWeapon.Accuracy);
+
+            AudioManager.PlayOneShot(currentWeapon.FireAudioClip, currentWeapon.FireAudioVolume);
 
             if (pelletCount == 1)
             {
-                Vector2 randomizedDirection = ApplyRandomSpread(normalizedAim, inaccuracyAngle);
+                var randomizedDirection = ApplyRandomSpread(normalizedAim, inaccuracyAngle);
                 projectileSpawner.Spawn(currentWeapon.ProjectilePrefab, owner, ignoredCollider, origin, randomizedDirection, currentWeapon.ProjectileDefinition);
                 return;
             }
 
-            float step = pelletCount > 1 ? spread / (pelletCount - 1) : 0f;
-            float startAngle = -spread * 0.5f;
+            var step = pelletCount > 1 ? spread / (pelletCount - 1) : 0f;
+            var startAngle = -spread * 0.5f;
 
-            for (int i = 0; i < pelletCount; i++)
+            for (var i = 0; i < pelletCount; i++)
             {
-                float angle = startAngle + step * i;
-                Vector2 pelletDirection = Rotate(normalizedAim, angle);
+                var angle = startAngle + step * i;
+                var pelletDirection = Rotate(normalizedAim, angle);
                 pelletDirection = ApplyRandomSpread(pelletDirection, inaccuracyAngle);
                 projectileSpawner.Spawn(currentWeapon.ProjectilePrefab, owner, ignoredCollider, origin, pelletDirection, currentWeapon.ProjectileDefinition);
             }
@@ -121,15 +124,15 @@ namespace Projects.Scripts.Characters
                 return direction.normalized;
             }
 
-            float randomAngle = Random.Range(-randomAngleRange * 0.5f, randomAngleRange * 0.5f);
+            var randomAngle = Random.Range(-randomAngleRange * 0.5f, randomAngleRange * 0.5f);
             return Rotate(direction, randomAngle);
         }
 
         private static Vector2 Rotate(Vector2 vector, float degrees)
         {
-            float radians = degrees * Mathf.Deg2Rad;
-            float sin = Mathf.Sin(radians);
-            float cos = Mathf.Cos(radians);
+            var radians = degrees * Mathf.Deg2Rad;
+            var sin = Mathf.Sin(radians);
+            var cos = Mathf.Cos(radians);
             return new Vector2(
                 vector.x * cos - vector.y * sin,
                 vector.x * sin + vector.y * cos);
