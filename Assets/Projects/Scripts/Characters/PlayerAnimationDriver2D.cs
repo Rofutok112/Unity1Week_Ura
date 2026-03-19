@@ -16,6 +16,8 @@ namespace Projects.Scripts.Characters
         [SerializeField] private string crouchingParameter = "Crouching";
         [SerializeField] private string runningParameter = "Running";
         [SerializeField] private string inputXParameter = "InputX";
+        [SerializeField] private string jumpingParameter = "Jumping";
+        [SerializeField] private string fallingParameter = "Falling";
 
         [Header("Visuals")]
         [SerializeField] private bool flipSpriteRenderer = true;
@@ -55,6 +57,8 @@ namespace Projects.Scripts.Characters
                 animator.SetBool(crouchingParameter, state.IsCrouching);
                 animator.SetBool(runningParameter, state.IsRunning);
                 animator.SetFloat(inputXParameter, state.MoveInput.x);
+                animator.SetBool(jumpingParameter, state.IsJumping);
+                animator.SetBool(fallingParameter, state.IsFalling);
             }
 
             if (flipSpriteRenderer && spriteRenderer != null && Mathf.Abs(state.FacingDirection) > 0.01f)
